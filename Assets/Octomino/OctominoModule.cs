@@ -49,7 +49,10 @@ public class OctominoModule : ModdedModule {
 		// _colors = Enumerable.Range(0, OctominoUtils.SIZE).Select(i => Color.HSVToRGB((colorsOffset + i * colorsWidth) % 1f, 1f, 1f)).ToArray();
 		_colors = new Color[] { Color.red, Color.green, Color.blue, Color.cyan, Color.magenta, Color.yellow, Color.white, new Color(.4f, 0, 1f) };
 		_colors.Shuffle();
-		_puzzle = OctominoUtils.GeneratePuzzle(OctominoRenderer.Dimensions);
+		// int maxDistance = -1;
+		int maxDistance = 6 - OctominoRenderer.Dimensions;
+		// int maxDistance = OctominoRenderer.Dimensions == 2 ? 4 : 3;
+		_puzzle = OctominoUtils.GeneratePuzzle(OctominoRenderer.Dimensions, OctominoUtils.SIZE, maxDistance);
 		OctominoRenderer.Initialize(_puzzle, _colors);
 		CreateButtons();
 		Timer.Value = 1f;

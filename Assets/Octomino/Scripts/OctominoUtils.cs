@@ -50,17 +50,24 @@ public static class OctominoUtils {
 		}
 	}
 
-	public static FaceProps[] GeneratePuzzle(int dims, int size = SIZE) {
+	public static FaceProps[] GeneratePuzzle(int dims, int size = SIZE, int maxWidth = -1) {
 		MultiDimVectorInt[] facesPositions = new MultiDimVectorInt[size];
 		List<int>[] facesAdjacentIndices = new List<int>[size];
 		for (int i = 0; i < size; i++) facesAdjacentIndices[i] = new List<int>();
 		Dictionary<MultiDimVectorInt, int> positionToIndexMap = new Dictionary<MultiDimVectorInt, int>();
 		List<MultiDimVectorInt> queue = new List<MultiDimVectorInt> { new MultiDimVectorInt(dims) };
+		MultiDimVectorInt min = new MultiDimVectorInt(dims, int.MaxValue);
+		MultiDimVectorInt max = new MultiDimVectorInt(dims, int.MinValue);
 		int generatedFacesCount = 0;
 		while (generatedFacesCount < size) {
 			MultiDimVectorInt pos = queue.PickRandom();
 			queue.Remove(pos);
 			if (positionToIndexMap.ContainsKey(pos) && positionToIndexMap[pos] >= 0) continue;
+			if (maxWidth > 0) {
+				if (Enumerable.Range(0, dims).Any(dim => pos[dim] - min[dim] >= maxWidth) || Enumerable.Range(0, dims).Any(dim => max[dim] - pos[dim] >= maxWidth)) {
+					continue;
+				}
+			}
 			int index = generatedFacesCount++;
 			foreach (MultiDimVectorInt dd in GetDD(dims)) {
 				MultiDimVectorInt adj = pos.Add(dd);
@@ -74,7 +81,10 @@ public static class OctominoUtils {
 				facesAdjacentIndices[adjIndex].Add(index);
 				facesAdjacentIndices[index].Add(adjIndex);
 			}
+			min = new MultiDimVectorInt(Enumerable.Range(0, dims).Select(dim => Mathf.Min(pos[dim], min[dim])));
+			max = new MultiDimVectorInt(Enumerable.Range(0, dims).Select(dim => Mathf.Max(pos[dim], max[dim])));
 			facesPositions[index] = pos;
+			Debug.LogFormat("({0}) {1}: {2} (min:{3};max:{4})", new object[] { maxWidth, index, pos.Value.Join(","), min.Value.Join(","), max.Value.Join(",") });
 			positionToIndexMap[pos] = index;
 		}
 		MultiDimVectorInt positionOffset = new MultiDimVectorInt(Enumerable.Range(0, dims).Select(i => facesPositions.Min(p => p[i])).ToArray());
@@ -129,6 +139,7 @@ public static class OctominoUtils {
 				}
 			}
 		}
+		// Debug.LogFormat("{0}: {1}", new object[] { maxDiameter, offset.Value.Join(",") });
 		Assert.IsTrue(maxDiameter > 0, "Octomino: Failed to get puzzle scale");
 		scale = 1f / maxDiameter;
 	}

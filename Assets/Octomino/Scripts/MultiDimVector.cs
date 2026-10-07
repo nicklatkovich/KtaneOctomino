@@ -48,6 +48,7 @@ public static class MultiDimVectorExtensions {
 	public static MultiDimVector<float> Neg(this MultiDimVector<float> vec) { return new MultiDimVector<float>(vec.Value.Select(v => -v).ToArray()); }
 	public static MultiDimVector<float> Sub(this MultiDimVector<float> vec1, MultiDimVector<float> vec2) { return vec1.Add(vec2.Neg()); }
 	public static MultiDimVector<float> Div(this MultiDimVector<float> vec, float value) { return new MultiDimVector<float>(vec.Value.Select(v => v / value)); }
+	public static Vector4 ToVector4(this MultiDimVector<float> vec) { Assert.IsTrue(vec.Dims >= 4); return new Vector4(vec[0], vec[1], vec[2], vec[3]); }
 
 	public static float Distance(MultiDimVector<float> vec1, MultiDimVector<float> vec2) {
 		float sum = 0f;

@@ -405,7 +405,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b45cfccb12bc4438a99e2c133d6be95f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TIME_TO_SOLVE: 60
+  TIME_TO_SOLVE: 40
   Selectable: {fileID: 114842659056784396}
   Audio: {fileID: 114270890767130926}
   ButtonPrefab: {fileID: 114678704866187224, guid: de6224ffe54324493a8c753e76134e74,
