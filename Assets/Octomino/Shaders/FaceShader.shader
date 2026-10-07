@@ -46,7 +46,7 @@
 
 			fixed4 frag (v2f i) : SV_Target {
 				float2 pos = i.uv - 0.5;
-				float a = max(abs(pos.x), abs(pos.y)) > 0.4 ? 1.0 : 0.2;
+				float a = max(abs(pos.x), abs(pos.y)) > 0.4 ? 1.0 : 0.25;
 				// if (max(abs(pos.x), abs(pos.y)) <= 0.4) discard;
 				return float4(_Color.xyz, a);
 			}
@@ -83,7 +83,7 @@
 
 			fixed4 frag (v2f i) : SV_Target {
 				float2 pos = i.uv - 0.5;
-				float a = max(abs(pos.x), abs(pos.y)) > 0.4 ? 1.0 : 0.5;
+				float a = max(abs(pos.x), abs(pos.y)) > 0.4 ? 1.0 : 0.75;
 				return float4(_Color.xyz, a);
 			}
 			ENDCG
