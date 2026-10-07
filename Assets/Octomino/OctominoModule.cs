@@ -5,6 +5,8 @@ using wawa.Modules;
 
 public class OctominoModule : ModdedModule {
 
+	public float TIME_TO_SOLVE = 40; // seconds
+
 	private enum STATUS {
 		CREATED = 0,
 		GENERATED = 1,
@@ -12,19 +14,18 @@ public class OctominoModule : ModdedModule {
 		SOLVED = 3,
 	}
 
-	public Transform FacesContainer;
-	public Transform ButtonsContainer;
-	public OctominoTimer Timer;
-
 	// self components
 	public KMSelectable Selectable;
 	public KMAudio Audio;
 
-	public FaceComponent FacePrefab;
 	public ButtonComponent ButtonPrefab;
 
+	public Transform ButtonsContainer;
+	public OctominoTimer Timer;
+	public MonoBehaviour OctominoRendererComponent;
+	public IOctominoRenderer OctominoRenderer => OctominoRendererComponent as IOctominoRenderer;
+
 	private const float BUTTONS_OFFSET = .006f;
-	private const float TIME_TO_SOLVE = 40; // seconds
 	private const float SECONDS_BEFORE_ACTIVATION = 6f; // module's timer animation duration before bomb activation
 
 	// sounds
@@ -48,8 +49,8 @@ public class OctominoModule : ModdedModule {
 		// _colors = Enumerable.Range(0, OctominoUtils.SIZE).Select(i => Color.HSVToRGB((colorsOffset + i * colorsWidth) % 1f, 1f, 1f)).ToArray();
 		_colors = new Color[] { Color.red, Color.green, Color.blue, Color.cyan, Color.magenta, Color.yellow, Color.white, new Color(.4f, 0, 1f) };
 		_colors.Shuffle();
-		_puzzle = OctominoUtils.GeneratePuzzle();
-		CreateFaces();
+		_puzzle = OctominoUtils.GeneratePuzzle(OctominoRenderer.Dimensions);
+		OctominoRenderer.CreateFaces(_puzzle, _colors);
 		CreateButtons();
 		Timer.Value = 1f;
 		_startedAt = Time.time;
@@ -70,9 +71,7 @@ public class OctominoModule : ModdedModule {
 
 	protected override void OnActivate() {
 		base.OnActivate();
-		for (int index = 0; index < OctominoUtils.SIZE; index++) {
-			Log("{0}: ({1},{2}) adj={3}", index, _puzzle[index].position.x, _puzzle[index].position.y, _puzzle[index].adjacentIndices.Join(","));
-		}
+		// TODO: Log octomino
 		Reset();
 	}
 
@@ -92,22 +91,6 @@ public class OctominoModule : ModdedModule {
 		_buttons[_startButtonIndex].Renderer.enabled = true;
 		_status = STATUS.GENERATED;
 		Timer.Value = 0f;
-	}
-
-	private void CreateFaces() {
-		float containerScale;
-		Vector2 facesOffset;
-		OctominoUtils.CalculatePuzzleOffsetAndScale(_puzzle, out containerScale, out facesOffset);
-		FacesContainer.localScale = Vector3.one * containerScale;
-		foreach (OctominoUtils.FaceProps props in _puzzle) {
-			FaceComponent face = Instantiate(FacePrefab);
-			face.transform.parent = FacesContainer;
-			face.transform.localPosition = new Vector3(props.position.x, 0, props.position.y) - new Vector3(facesOffset.x, 0, facesOffset.y);
-			face.transform.localRotation = Quaternion.identity;
-			face.transform.localScale = Vector3.one;
-			face.Color = _colors[props.index];
-		}
-		FacesContainer.localRotation = Quaternion.Euler(0, 45f + Random.Range(0, 4) * 90f, 0);
 	}
 
 	private void CreateButtons() {
