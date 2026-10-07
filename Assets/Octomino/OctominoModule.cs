@@ -50,7 +50,7 @@ public class OctominoModule : ModdedModule {
 		_colors = new Color[] { Color.red, Color.green, Color.blue, Color.cyan, Color.magenta, Color.yellow, Color.white, new Color(.4f, 0, 1f) };
 		_colors.Shuffle();
 		_puzzle = OctominoUtils.GeneratePuzzle(OctominoRenderer.Dimensions);
-		OctominoRenderer.CreateFaces(_puzzle, _colors);
+		OctominoRenderer.Initialize(_puzzle, _colors);
 		CreateButtons();
 		Timer.Value = 1f;
 		_startedAt = Time.time;

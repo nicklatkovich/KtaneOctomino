@@ -2,5 +2,5 @@
 
 public interface IOctominoRenderer {
 	int Dimensions { get; }
-	void CreateFaces(OctominoUtils.FaceProps[] puzzle, Color[] colors);
+	void Initialize(OctominoUtils.FaceProps[] puzzle, Color[] colors);
 }

@@ -9,7 +9,7 @@ public class OctominoRenderer2D : MonoBehaviour, IOctominoRenderer {
 
 	public Transform FacesContainer;
 
-	public void CreateFaces(OctominoUtils.FaceProps[] puzzle, Color[] colors) {
+	public void Initialize(OctominoUtils.FaceProps[] puzzle, Color[] colors) {
 		float containerScale;
 		MultiDimVectorFloat facesOffset;
 		OctominoUtils.CalculatePuzzleOffsetAndScale(DIMENSIONS, puzzle, out containerScale, out facesOffset);
