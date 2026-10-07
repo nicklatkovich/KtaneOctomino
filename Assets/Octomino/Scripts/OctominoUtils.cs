@@ -55,16 +55,17 @@ public static class OctominoUtils {
 		List<int>[] facesAdjacentIndices = new List<int>[size];
 		for (int i = 0; i < size; i++) facesAdjacentIndices[i] = new List<int>();
 		Dictionary<MultiDimVectorInt, int> positionToIndexMap = new Dictionary<MultiDimVectorInt, int>();
-		HashSet<MultiDimVectorInt> queue = new HashSet<MultiDimVectorInt> { new MultiDimVectorInt(dims) };
+		List<MultiDimVectorInt> queue = new List<MultiDimVectorInt> { new MultiDimVectorInt(dims) };
 		int generatedFacesCount = 0;
 		while (generatedFacesCount < size) {
 			MultiDimVectorInt pos = queue.PickRandom();
 			queue.Remove(pos);
+			if (positionToIndexMap.ContainsKey(pos) && positionToIndexMap[pos] >= 0) continue;
 			int index = generatedFacesCount++;
 			foreach (MultiDimVectorInt dd in GetDD(dims)) {
 				MultiDimVectorInt adj = pos.Add(dd);
+				queue.Add(adj); // queue.Add is outside of if block to make stretched octominos less common
 				if (!positionToIndexMap.ContainsKey(adj)) {
-					queue.Add(adj);
 					positionToIndexMap[adj] = -1;
 					continue;
 				}
