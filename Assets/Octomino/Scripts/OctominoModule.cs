@@ -5,6 +5,12 @@ using wawa.Modules;
 
 public class OctominoModule : ModdedModule {
 
+	// assuming each stage takes up to 20 seconds to complete:
+	// 1. 20
+	// 2. 20/2+20 = 30
+	// 3. 30/2+20 = 35
+	// 4. 35/2+20 = 37.5
+	// 5. 37.5/2+20 = 38.75
 	public float TIME_TO_SOLVE = 40; // seconds
 
 	private enum STATUS {
@@ -23,7 +29,11 @@ public class OctominoModule : ModdedModule {
 	public Transform ButtonsContainer;
 	public OctominoTimer Timer;
 	public MonoBehaviour OctominoRendererComponent;
-	public IOctominoRenderer OctominoRenderer => OctominoRendererComponent as IOctominoRenderer;
+	public StageDisplay StageDisplay;
+
+	public OctominoRenderer2D OctominoRenderer2D;
+	public OctominoRenderer3D OctominoRenderer3D;
+	public OctominoRenderer4D OctominoRenderer4D;
 
 	private const float BUTTONS_OFFSET = .006f;
 	private const float SECONDS_BEFORE_ACTIVATION = 6f; // module's timer animation duration before bomb activation
@@ -32,6 +42,8 @@ public class OctominoModule : ModdedModule {
 	private const string START_SOUND = "OctominoStart";
 	private const string MOVE_SOUND = "OctominoMove";
 
+	private readonly Color[] _colors = new Color[] { Color.red, Color.green, Color.blue, Color.cyan, Color.magenta, Color.yellow, Color.white, new Color(.4f, 0, 1f) };
+
 	private int _startButtonIndex;
 	private int _currentButtonIndex;
 	private STATUS _status = STATUS.CREATED;
@@ -39,30 +51,26 @@ public class OctominoModule : ModdedModule {
 	private bool[] _isVisited;
 	private int[] _buttonToFaceIndex;
 	private int[] _faceToButtonIndex;
-	private Color[] _colors;
 	private OctominoUtils.FaceProps[] _puzzle;
 	private ButtonComponent[] _buttons;
 
 	protected void Start() {
-		// float colorsOffset = Random.value;
-		// float colorsWidth = 1f / OctominoUtils.SIZE;
-		// _colors = Enumerable.Range(0, OctominoUtils.SIZE).Select(i => Color.HSVToRGB((colorsOffset + i * colorsWidth) % 1f, 1f, 1f)).ToArray();
-		_colors = new Color[] { Color.red, Color.green, Color.blue, Color.cyan, Color.magenta, Color.yellow, Color.white, new Color(.4f, 0, 1f) };
-		_colors.Shuffle();
-		// int maxDistance = -1;
-		int maxDistance = 6 - OctominoRenderer.Dimensions;
-		// int maxDistance = OctominoRenderer.Dimensions == 2 ? 4 : 3;
-		_puzzle = OctominoUtils.GeneratePuzzle(OctominoRenderer.Dimensions, OctominoUtils.SIZE, maxDistance);
-		OctominoRenderer.Initialize(_puzzle, _colors);
+		OctominoRenderer3D.enabled = false;
+		OctominoRenderer4D.enabled = false;
 		CreateButtons();
-		Timer.Value = 1f;
+		StageDisplay.OuterColor = _colors.PickRandom();
 		_startedAt = Time.time;
+		_colors.Shuffle();
+		GeneratePuzzle(2);
 	}
 
 	protected void Update() {
 		switch (_status) {
 			case STATUS.CREATED:
-				Timer.Value = (Time.time - _startedAt) / SECONDS_BEFORE_ACTIVATION;
+				float loader = (Time.time - _startedAt) / SECONDS_BEFORE_ACTIVATION;
+				Timer.Value = loader;
+				StageDisplay.Progress = loader;
+				StageDisplay.ResetProgress = loader;
 				break;
 			case STATUS.STARTED:
 				float timer = (Time.time - _startedAt) / TIME_TO_SOLVE;
@@ -74,7 +82,9 @@ public class OctominoModule : ModdedModule {
 
 	protected override void OnActivate() {
 		base.OnActivate();
-		// TODO: Log octomino
+		StageDisplay.Progress = 0;
+		StageDisplay.ResetProgress = 0;
+		StageDisplay.OuterColor = Color.black;
 		Reset();
 	}
 
@@ -111,7 +121,6 @@ public class OctominoModule : ModdedModule {
 			btn.Color = _colors[index];
 			btn.Selectable.Parent = Selectable;
 			selectables.Add(btn.Selectable);
-			// btn.Renderer.enabled = false;
 			btn.Selectable.OnInteract += () => { OnButtonPressed(indexClosure); return false; };
 			_buttons[index] = btn;
 		}
@@ -175,5 +184,22 @@ public class OctominoModule : ModdedModule {
 		Strike();
 		Reset();
 		return true;
+	}
+
+	private void GeneratePuzzle(int dims) {
+		// int maxDistance = -1;
+		// int maxDistance = 6 - dims;
+		int maxDistance = dims == 2 ? 4 : 3;
+		_puzzle = OctominoUtils.GeneratePuzzle(dims, OctominoUtils.SIZE, maxDistance);
+		GetOctominoRenderer(dims).Initialize(_puzzle, _colors);
+	}
+
+	private IOctominoRenderer GetOctominoRenderer(int dims) {
+		switch (dims) {
+			case 2: return OctominoRenderer2D;
+			case 3: return OctominoRenderer3D;
+			case 4: return OctominoRenderer4D;
+			default: throw new System.NotImplementedException();
+		}
 	}
 }

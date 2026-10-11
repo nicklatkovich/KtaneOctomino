@@ -13,7 +13,7 @@ public class OctominoRenderer4D : MonoBehaviour, IOctominoRenderer {
 
 	public Transform TesseractsContainer;
 
-	private TesseractComponent[] _tesseracts;
+	private readonly List<TesseractComponent> _tesseracts = new List<TesseractComponent>();
 	private Matrix5x5 _scaleMatrix;
 	private Matrix5x5 _rotationMatrix;
 	private Matrix5x5 _perspectiveMatrix;
@@ -34,13 +34,13 @@ public class OctominoRenderer4D : MonoBehaviour, IOctominoRenderer {
 	}
 
 	public void Initialize(OctominoUtils.FaceProps[] puzzle, Color[] colors) {
+		Clear();
 		float containerScale;
 		MultiDimVectorFloat facesOffset;
 		OctominoUtils.CalculatePuzzleOffsetAndScale(DIMENSIONS, puzzle, out containerScale, out facesOffset);
 		Vector4 offset = facesOffset.ToVector4();
 		_scaleMatrix = Matrix5x5.Scale(containerScale);
 		// CubesContainer.localScale = Vector3.one * containerScale;
-		List<TesseractComponent> tesseracts = new List<TesseractComponent>();
 		foreach (OctominoUtils.FaceProps props in puzzle) {
 			TesseractComponent tesseract = Instantiate(TesseractPrefab);
 			tesseract.transform.parent = TesseractsContainer;
@@ -50,9 +50,13 @@ public class OctominoRenderer4D : MonoBehaviour, IOctominoRenderer {
 			tesseract.transform.localScale = Vector3.one;
 			tesseract.Color = colors[props.index];
 			tesseract.Position = props.position.ToFloat().ToVector4() - offset;
-			tesseracts.Add(tesseract);
+			_tesseracts.Add(tesseract);
 		}
-		_tesseracts = tesseracts.ToArray();
 		// CubesContainer.localRotation = _rotation;
+	}
+
+	public void Clear() {
+		foreach (TesseractComponent tesseract in _tesseracts) Destroy(tesseract.gameObject);
+		_tesseracts.Clear();
 	}
 }

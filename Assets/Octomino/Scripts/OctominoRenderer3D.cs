@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using MultiDimVectorFloat = MultiDimVector<float>;
 
 public class OctominoRenderer3D : MonoBehaviour, IOctominoRenderer {
@@ -10,6 +11,8 @@ public class OctominoRenderer3D : MonoBehaviour, IOctominoRenderer {
 	public CubeComponent CubePrefab;
 
 	public Transform CubesContainer;
+
+	private readonly List<CubeComponent> _cubes = new List<CubeComponent>();
 
 	private Quaternion _rotation;
 
@@ -24,6 +27,7 @@ public class OctominoRenderer3D : MonoBehaviour, IOctominoRenderer {
 	}
 
 	public void Initialize(OctominoUtils.FaceProps[] puzzle, Color[] colors) {
+		Clear();
 		float containerScale;
 		MultiDimVectorFloat facesOffset;
 		OctominoUtils.CalculatePuzzleOffsetAndScale(DIMENSIONS, puzzle, out containerScale, out facesOffset);
@@ -39,5 +43,10 @@ public class OctominoRenderer3D : MonoBehaviour, IOctominoRenderer {
 			cube.Color = colors[props.index];
 		}
 		CubesContainer.localRotation = _rotation;
+	}
+
+	public void Clear() {
+		foreach (CubeComponent cube in _cubes) Destroy(cube.gameObject);
+		_cubes.Clear();
 	}
 }
