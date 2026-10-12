@@ -5,15 +5,8 @@ using wawa.Modules;
 
 public class OctominoModule : ModdedModule {
 
-	public int STAGES_COUNT = 5;
-
-	// assuming each stage takes up to 30 seconds to complete:
-	// 1. 30
-	// 2. 30/2+30 = 45
-	// 3. 45/2+30 = 52.5
-	// 4. 52.5/2+30 = 56.25
-	// 5. 56.25/2+30 = 58.125
-	public float TIME_TO_SOLVE = 60; // seconds
+	public const int STAGES_COUNT = 5;
+	public const float TIME_TO_SOLVE = 60; // seconds
 
 	private enum STATUS {
 		CREATED = 0,
@@ -54,6 +47,7 @@ public class OctominoModule : ModdedModule {
 	private int _passedStagesCount;
 	private STATUS _status = STATUS.CREATED;
 	private float _startedAt;
+	private float _timeOffset = 0f;
 	private bool[] _isVisited;
 	private int[] _buttonToFaceIndex;
 	private int[] _faceToButtonIndex;
@@ -77,7 +71,7 @@ public class OctominoModule : ModdedModule {
 				StageDisplay.ResetProgress = loader;
 				break;
 			case STATUS.STARTED:
-				float timer = (Time.time - _startedAt) / TIME_TO_SOLVE;
+				float timer = (Time.time - _startedAt + _timeOffset) / TIME_TO_SOLVE;
 				if (timer > 1) StrikeAndReset();
 				else Timer.Value = timer;
 				break;
@@ -94,6 +88,7 @@ public class OctominoModule : ModdedModule {
 
 	private void OnStagePassed() {
 		_passedStagesCount += 1;
+		_timeOffset = (Time.time - _startedAt + _timeOffset) / 2f;
 		StageDisplay.Progress = (float)_passedStagesCount / STAGES_COUNT;
 		if (_passedStagesCount < STAGES_COUNT) {
 			GeneratePuzzle(STAGES_DIMS[_passedStagesCount]);
@@ -120,7 +115,7 @@ public class OctominoModule : ModdedModule {
 		_startButtonIndex = Random.Range(0, OctominoUtils.SIZE);
 		_buttons[_startButtonIndex].Renderer.enabled = true;
 		_status = STATUS.GENERATED;
-		Timer.Value = 0f;
+		Timer.Value = _timeOffset / TIME_TO_SOLVE;
 	}
 
 	private void CreateButtons() {
