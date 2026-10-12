@@ -5,6 +5,8 @@ using wawa.Modules;
 
 public class OctominoModule : ModdedModule {
 
+	public int STAGES_COUNT = 5;
+
 	// assuming each stage takes up to 20 seconds to complete:
 	// 1. 20
 	// 2. 20/2+20 = 30
@@ -42,10 +44,14 @@ public class OctominoModule : ModdedModule {
 	private const string START_SOUND = "OctominoStart";
 	private const string MOVE_SOUND = "OctominoMove";
 
+	private readonly int[] STAGES_DIMS = new int[] { 2, 3, 4, 3, 2 };
+	// private readonly int[] STAGES_DIMS = new int[] { 4, 4, 4, 4, 4 };
+
 	private readonly Color[] _colors = new Color[] { Color.red, Color.green, Color.blue, Color.cyan, Color.magenta, Color.yellow, Color.white, new Color(.4f, 0, 1f) };
 
 	private int _startButtonIndex;
 	private int _currentButtonIndex;
+	private int _passedStagesCount;
 	private STATUS _status = STATUS.CREATED;
 	private float _startedAt;
 	private bool[] _isVisited;
@@ -55,13 +61,12 @@ public class OctominoModule : ModdedModule {
 	private ButtonComponent[] _buttons;
 
 	protected void Start() {
-		OctominoRenderer3D.enabled = false;
-		OctominoRenderer4D.enabled = false;
+		ClearAndDisableOctominoRenderers();
 		CreateButtons();
 		StageDisplay.OuterColor = _colors.PickRandom();
 		_startedAt = Time.time;
 		_colors.Shuffle();
-		GeneratePuzzle(2);
+		GeneratePuzzle(STAGES_DIMS[0]);
 	}
 
 	protected void Update() {
@@ -86,6 +91,19 @@ public class OctominoModule : ModdedModule {
 		StageDisplay.ResetProgress = 0;
 		StageDisplay.OuterColor = Color.black;
 		Reset();
+	}
+
+	private void OnStagePassed() {
+		_passedStagesCount += 1;
+		StageDisplay.Progress = (float)_passedStagesCount / STAGES_COUNT;
+		if (_passedStagesCount < STAGES_COUNT) {
+			GeneratePuzzle(STAGES_DIMS[_passedStagesCount]);
+			Reset();
+		} else {
+			Solve();
+			Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.CorrectChime, transform);
+			_status = STATUS.SOLVED;
+		}
 	}
 
 	private void Reset() {
@@ -143,10 +161,8 @@ public class OctominoModule : ModdedModule {
 			case STATUS.STARTED:
 				if (index == _currentButtonIndex) {
 					if (index == _startButtonIndex && _isVisited.All(v => v)) {
-						Solve();
-						Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.CorrectChime, transform);
-						_status = STATUS.SOLVED;
 						_buttons[index].BorderSize = ButtonComponent.DEFAULT_BORDER_SIZE;
+						OnStagePassed();
 						return true;
 					}
 					return StrikeAndReset();
@@ -191,7 +207,10 @@ public class OctominoModule : ModdedModule {
 		// int maxDistance = 6 - dims;
 		int maxDistance = dims == 2 ? 4 : 3;
 		_puzzle = OctominoUtils.GeneratePuzzle(dims, OctominoUtils.SIZE, maxDistance);
-		GetOctominoRenderer(dims).Initialize(_puzzle, _colors);
+		ClearAndDisableOctominoRenderers();
+		IOctominoRenderer renderer = GetOctominoRenderer(dims);
+		renderer.Initialize(_puzzle, _colors);
+		renderer.enabled = true;
 	}
 
 	private IOctominoRenderer GetOctominoRenderer(int dims) {
@@ -201,5 +220,14 @@ public class OctominoModule : ModdedModule {
 			case 4: return OctominoRenderer4D;
 			default: throw new System.NotImplementedException();
 		}
+	}
+
+	private void ClearAndDisableOctominoRenderers() {
+		OctominoRenderer2D.Clear();
+		OctominoRenderer3D.Clear();
+		OctominoRenderer4D.Clear();
+		OctominoRenderer2D.enabled = false;
+		OctominoRenderer3D.enabled = false;
+		OctominoRenderer4D.enabled = false;
 	}
 }

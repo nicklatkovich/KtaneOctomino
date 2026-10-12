@@ -84,7 +84,6 @@ public static class OctominoUtils {
 			min = new MultiDimVectorInt(Enumerable.Range(0, dims).Select(dim => Mathf.Min(pos[dim], min[dim])));
 			max = new MultiDimVectorInt(Enumerable.Range(0, dims).Select(dim => Mathf.Max(pos[dim], max[dim])));
 			facesPositions[index] = pos;
-			Debug.LogFormat("({0}) {1}: {2} (min:{3};max:{4})", new object[] { maxWidth, index, pos.Value.Join(","), min.Value.Join(","), max.Value.Join(",") });
 			positionToIndexMap[pos] = index;
 		}
 		MultiDimVectorInt positionOffset = new MultiDimVectorInt(Enumerable.Range(0, dims).Select(i => facesPositions.Min(p => p[i])).ToArray());

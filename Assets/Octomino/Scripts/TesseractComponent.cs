@@ -20,6 +20,8 @@ public class TesseractComponent : MonoBehaviour {
 		Vector2[] faceUVs = new Vector2[] { Vector2.zero, Vector2.right, Vector2.up, Vector2.one };
 		mesh.uv = Enumerable.Range(0, mesh.vertices.Length).Select(i => faceUVs[i % 4]).ToArray();
 		mesh.triangles = BuildMeshTriangles(meshVertices.Length);
+		Bounds meshBounds = new Bounds { center = Vector3.zero, size = Vector3.one };
+		mesh.bounds = meshBounds;
 	}
 
 	public void Transform(_4D.Matrix5x5 parentTransfrom) {
@@ -28,7 +30,7 @@ public class TesseractComponent : MonoBehaviour {
 		Vector3[] transformedVertices = _vertices.Select(v4 => (v4 * m5).ToVector3()).ToArray();
 		mesh.vertices = BuildMeshVertices(transformedVertices);
 		mesh.RecalculateNormals();
-		mesh.RecalculateBounds();
+		// mesh.RecalculateBounds();
 	}
 
 	private Vector3[] BuildMeshVertices(Vector3[] v3s) {

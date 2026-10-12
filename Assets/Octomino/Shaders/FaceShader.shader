@@ -16,7 +16,7 @@
 		Fog { Mode Off }
 		AlphaToMask On
 
-		Blend SrcAlpha OneMinusSrcAlpha
+		Blend Off
 
 		Pass {
 			Cull Front

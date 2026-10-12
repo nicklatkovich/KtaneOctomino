@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using _4D;
 using UnityEngine;
 using MultiDimVectorFloat = MultiDimVector<float>;
 
 public class OctominoRenderer4D : MonoBehaviour, IOctominoRenderer {
 	public const int DIMENSIONS = 4;
-	public const float MOUSE_MAX_ROTATION_ANGLE = 90; // deg
+	public const float FOV = 120f;
+	public const float MOUSE_MAX_ROTATION_ANGLE = 45; // deg
 
 	public int Dimensions { get { return DIMENSIONS; } }
 
@@ -19,18 +21,20 @@ public class OctominoRenderer4D : MonoBehaviour, IOctominoRenderer {
 	private Matrix5x5 _perspectiveMatrix;
 
 	protected void Start() {
-		_rotationMatrix = Matrix5x5.RandomRotation();
+		// _rotationMatrix = Matrix5x5.RandomRotation();
 		// _rotationMatrix = Matrix5x5.IDENTITY;
-		_perspectiveMatrix = Matrix5x5.Perpective(120f, .01f, 100f);
+		_rotationMatrix = SlightRotation();
+		_perspectiveMatrix = Matrix5x5.Perpective(FOV, .01f, 100f);
 	}
 
 	protected void Update() {
 		float x = Mathf.Clamp01(Input.mousePosition.x / Screen.width) * 2f - 1f;
 		float y = Mathf.Clamp01(Input.mousePosition.y / Screen.height) * 2f - 1f;
-		TesseractsContainer.localRotation = Quaternion.Euler(y * MOUSE_MAX_ROTATION_ANGLE, 0, -x * MOUSE_MAX_ROTATION_ANGLE);
-		// _rotationMatrix *= Matrix5x5.Rotation(0, 3, Time.deltaTime);
+		TesseractsContainer.localRotation = Quaternion.Euler(y * MOUSE_MAX_ROTATION_ANGLE + 30, 0, -x * MOUSE_MAX_ROTATION_ANGLE - 30);
+		// _rotationMatrix *= Matrix5x5.Rotation(0, 3, Time.deltaTime * 0.1f);
 		// _rotationMatrix = Matrix5x5.Rotation(0, 1, -x * MOUSE_MAX_ROTATION_ANGLE * Mathf.Deg2Rad) * Matrix5x5.Rotation(2, 3, y * MOUSE_MAX_ROTATION_ANGLE * Mathf.Deg2Rad);
-		foreach (TesseractComponent t in _tesseracts) t.Transform(_scaleMatrix * _rotationMatrix * Matrix5x5.Translation(Utils.Vector4Ana * .708f) * _perspectiveMatrix);
+		Matrix5x5 cameraTranslation = Matrix5x5.Translation(Utils.Vector4Ana * 0.5f / Mathf.Sin(FOV / 2f * Mathf.Deg2Rad));
+		foreach (TesseractComponent t in _tesseracts) t.Transform(_scaleMatrix * _rotationMatrix * cameraTranslation * _perspectiveMatrix);
 	}
 
 	public void Initialize(OctominoUtils.FaceProps[] puzzle, Color[] colors) {
@@ -58,5 +62,13 @@ public class OctominoRenderer4D : MonoBehaviour, IOctominoRenderer {
 	public void Clear() {
 		foreach (TesseractComponent tesseract in _tesseracts) Destroy(tesseract.gameObject);
 		_tesseracts.Clear();
+	}
+
+	private Matrix5x5 SlightRotation() {
+		float maxRads = 15 * Mathf.Deg2Rad;
+		int[] components = Enumerable.Range(0, 4).ToArray().Shuffle();
+		Matrix5x5 rotation1 = Matrix5x5.Rotation(components[0], components[1], (Random.Range(0, 2) - 0.5f) * maxRads);
+		Matrix5x5 rotation2 = Matrix5x5.Rotation(components[2], components[3], (Random.Range(0, 2) - 0.5f) * maxRads);
+		return rotation1 * rotation2;
 	}
 }

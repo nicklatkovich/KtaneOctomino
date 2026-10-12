@@ -41,6 +41,7 @@ public class OctominoRenderer3D : MonoBehaviour, IOctominoRenderer {
 			cube.transform.localRotation = Quaternion.identity;
 			cube.transform.localScale = Vector3.one;
 			cube.Color = colors[props.index];
+			_cubes.Add(cube);
 		}
 		CubesContainer.localRotation = _rotation;
 	}
