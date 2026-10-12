@@ -9,10 +9,25 @@ public class TesseractComponent : MonoBehaviour {
 
 	public Vector4 Position;
 
+	private bool _initialized = false;
 	private Color _color; public Color Color { get { return _color; } set { Renderer.material.SetColor("_Color", _color = value); } }
-	private Vector4[] _vertices = OctominoUtils.TESSERACT_POINTS.Select(point => point.ToVector4()).ToArray();
+	private readonly Vector4[] _vertices = OctominoUtils.TESSERACT_POINTS.Select(point => point.ToVector4()).ToArray();
 
 	public void Start() {
+		if (!_initialized) Initialize();
+	}
+
+	public void Transform(_4D.Matrix5x5 parentTransfrom, out Vector3[] transformedVertices) {
+		if (!_initialized) Initialize();
+		Mesh mesh = MeshFilter.mesh;
+		_4D.Matrix5x5 m5 = _4D.Matrix5x5.Scale(.9f) * _4D.Matrix5x5.Translation(Position) * parentTransfrom;
+		transformedVertices = _vertices.Select(v4 => (v4 * m5).ToVector3()).ToArray();
+		mesh.vertices = BuildMeshVertices(transformedVertices);
+		mesh.RecalculateNormals();
+		mesh.RecalculateBounds();
+	}
+
+	private void Initialize() {
 		Mesh mesh = MeshFilter.mesh;
 		mesh.Clear();
 		Vector3[] meshVertices = BuildMeshVertices(Enumerable.Repeat(Vector3.zero, _vertices.Length).ToArray());
@@ -22,15 +37,7 @@ public class TesseractComponent : MonoBehaviour {
 		mesh.triangles = BuildMeshTriangles(meshVertices.Length);
 		Bounds meshBounds = new Bounds { center = Vector3.zero, size = Vector3.one };
 		mesh.bounds = meshBounds;
-	}
-
-	public void Transform(_4D.Matrix5x5 parentTransfrom) {
-		Mesh mesh = MeshFilter.mesh;
-		_4D.Matrix5x5 m5 = _4D.Matrix5x5.Scale(.9f) * _4D.Matrix5x5.Translation(Position) * parentTransfrom;
-		Vector3[] transformedVertices = _vertices.Select(v4 => (v4 * m5).ToVector3()).ToArray();
-		mesh.vertices = BuildMeshVertices(transformedVertices);
-		mesh.RecalculateNormals();
-		// mesh.RecalculateBounds();
+		_initialized = true;
 	}
 
 	private Vector3[] BuildMeshVertices(Vector3[] v3s) {

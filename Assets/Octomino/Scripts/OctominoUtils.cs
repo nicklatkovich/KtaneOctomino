@@ -99,7 +99,7 @@ public static class OctominoUtils {
 		bool isValid = true;
 		for (int i = 0; i < puzzle.Length; i++) {
 			MultiDimVectorFloat pos = puzzle[i].position.ToFloat();
-			if (GetNCubePoints(dims).Any(off => MultiDimVectorExtensions.Distance(pos.Add(off), _offset) > radius)) {
+			if (GetNCubePoints(dims).Any(off => MultiDimVectorExtensions.Distance(pos.Add(off), _offset) > radius + Mathf.Epsilon)) {
 				isValid = false;
 				break;
 			}
@@ -138,7 +138,6 @@ public static class OctominoUtils {
 				}
 			}
 		}
-		// Debug.LogFormat("{0}: {1}", new object[] { maxDiameter, offset.Value.Join(",") });
 		Assert.IsTrue(maxDiameter > 0, "Octomino: Failed to get puzzle scale");
 		scale = 1f / maxDiameter;
 	}

@@ -7,13 +7,13 @@ public class OctominoModule : ModdedModule {
 
 	public int STAGES_COUNT = 5;
 
-	// assuming each stage takes up to 20 seconds to complete:
-	// 1. 20
-	// 2. 20/2+20 = 30
-	// 3. 30/2+20 = 35
-	// 4. 35/2+20 = 37.5
-	// 5. 37.5/2+20 = 38.75
-	public float TIME_TO_SOLVE = 40; // seconds
+	// assuming each stage takes up to 30 seconds to complete:
+	// 1. 30
+	// 2. 30/2+30 = 45
+	// 3. 45/2+30 = 52.5
+	// 4. 52.5/2+30 = 56.25
+	// 5. 56.25/2+30 = 58.125
+	public float TIME_TO_SOLVE = 60; // seconds
 
 	private enum STATUS {
 		CREATED = 0,
@@ -61,7 +61,6 @@ public class OctominoModule : ModdedModule {
 	private ButtonComponent[] _buttons;
 
 	protected void Start() {
-		ClearAndDisableOctominoRenderers();
 		CreateButtons();
 		StageDisplay.OuterColor = _colors.PickRandom();
 		_startedAt = Time.time;
@@ -209,8 +208,8 @@ public class OctominoModule : ModdedModule {
 		_puzzle = OctominoUtils.GeneratePuzzle(dims, OctominoUtils.SIZE, maxDistance);
 		ClearAndDisableOctominoRenderers();
 		IOctominoRenderer renderer = GetOctominoRenderer(dims);
-		renderer.Initialize(_puzzle, _colors);
 		renderer.enabled = true;
+		renderer.Initialize(_puzzle, _colors);
 	}
 
 	private IOctominoRenderer GetOctominoRenderer(int dims) {
