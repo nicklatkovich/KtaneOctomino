@@ -1,6 +1,7 @@
 ﻿Shader "Octomino/FaceShader" {
 	Properties {
 		_Color ("Color", Color) = (1, 1, 1, 1)
+		_Alpha ("Alpha", float) = 0.25
 	}
 	SubShader {
 		Tags {
@@ -36,6 +37,7 @@
 			};
 
 			float4 _Color;
+			float _Alpha;
 
 			v2f vert (appdata v) {
 				v2f o;
@@ -46,7 +48,7 @@
 
 			fixed4 frag (v2f i) : SV_Target {
 				float2 pos = i.uv - 0.5;
-				float a = max(abs(pos.x), abs(pos.y)) > 0.4 ? 1.0 : 0.25;
+				float a = max(abs(pos.x), abs(pos.y)) > 0.4 ? 1.0 : _Alpha;
 				if (a == 0) discard;
 				// if (max(abs(pos.x), abs(pos.y)) <= 0.4) discard;
 				return float4(_Color.xyz, a);
@@ -74,6 +76,7 @@
 			};
 
 			float4 _Color;
+			float _Alpha;
 
 			v2f vert (appdata v) {
 				v2f o;
@@ -84,7 +87,7 @@
 
 			fixed4 frag (v2f i) : SV_Target {
 				float2 pos = i.uv - 0.5;
-				float a = max(abs(pos.x), abs(pos.y)) > 0.4 ? 1.0 : 0.25;
+				float a = max(abs(pos.x), abs(pos.y)) > 0.4 ? 1.0 : _Alpha;
 				if (a == 0) discard;
 				return float4(_Color.xyz, a);
 			}

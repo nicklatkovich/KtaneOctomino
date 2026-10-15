@@ -15,6 +15,7 @@ public class TesseractComponent : MonoBehaviour {
 
 	public void Start() {
 		if (!_initialized) Initialize();
+		Renderer.material.SetFloat("_Alpha", 0.25f);
 	}
 
 	public void Transform(_4D.Matrix5x5 parentTransfrom, out Vector3[] transformedVertices) {
