@@ -34,4 +34,8 @@ public class OctominoRenderer2D : MonoBehaviour, IOctominoRenderer {
 		foreach (FaceComponent face in _faces) Destroy(face.gameObject);
 		_faces.Clear();
 	}
+
+	public void Rotate(Vector2 dv2) {
+		FacesContainer.localRotation *= Quaternion.Euler(0, dv2.x, 0);
+	}
 }

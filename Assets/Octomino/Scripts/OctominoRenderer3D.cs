@@ -14,18 +14,6 @@ public class OctominoRenderer3D : MonoBehaviour, IOctominoRenderer {
 
 	private readonly List<CubeComponent> _cubes = new List<CubeComponent>();
 
-	private Quaternion _rotation;
-
-	protected void Start() {
-		_rotation = Random.rotation;
-	}
-
-	protected void Update() {
-		float x = Mathf.Clamp01(Input.mousePosition.x / Screen.width) * 2f - 1f;
-		float y = Mathf.Clamp01(Input.mousePosition.y / Screen.height) * 2f - 1f;
-		CubesContainer.localRotation = Quaternion.Euler(y * MOUSE_MAX_ROTATION_ANGLE, 0, -x * MOUSE_MAX_ROTATION_ANGLE) * _rotation;
-	}
-
 	public void Initialize(OctominoUtils.FaceProps[] puzzle, Color[] colors) {
 		Clear();
 		float containerScale;
@@ -43,11 +31,16 @@ public class OctominoRenderer3D : MonoBehaviour, IOctominoRenderer {
 			cube.Color = colors[props.index];
 			_cubes.Add(cube);
 		}
-		CubesContainer.localRotation = _rotation;
+		CubesContainer.localRotation = Random.rotation;
 	}
 
 	public void Clear() {
 		foreach (CubeComponent cube in _cubes) Destroy(cube.gameObject);
 		_cubes.Clear();
+	}
+
+	public void Rotate(Vector2 dv2) {
+		CubesContainer.Rotate(Vector3.back, dv2.x, Space.World);
+		CubesContainer.Rotate(Vector3.right, dv2.y, Space.World);
 	}
 }

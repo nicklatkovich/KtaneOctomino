@@ -25,6 +25,7 @@ public class OctominoModule : ModdedModule {
 	public OctominoTimer Timer;
 	public MonoBehaviour OctominoRendererComponent;
 	public StageDisplay StageDisplay;
+	public RotationButton RotationButton;
 
 	public OctominoRenderer2D OctominoRenderer2D;
 	public OctominoRenderer3D OctominoRenderer3D;
@@ -38,10 +39,13 @@ public class OctominoModule : ModdedModule {
 	private const string MOVE_SOUND = "OctominoMove";
 
 	private readonly int[] STAGES_DIMS = new int[] { 2, 3, 4, 3, 2 };
+	// private readonly int[] STAGES_DIMS = new int[] { 3, 3, 3, 3, 3 };
 	// private readonly int[] STAGES_DIMS = new int[] { 4, 4, 4, 4, 4 };
 
 	private readonly Color[] _colors = new Color[] { Color.red, Color.green, Color.blue, Color.cyan, Color.magenta, Color.yellow, Color.white, new Color(.4f, 0, 1f) };
 
+	private Vector2 _mouseRotationPosition;
+	private bool _isRotating = false;
 	private int _startButtonIndex;
 	private int _currentButtonIndex;
 	private int _passedStagesCount;
@@ -60,6 +64,12 @@ public class OctominoModule : ModdedModule {
 		_startedAt = Time.time;
 		_colors.Shuffle();
 		GeneratePuzzle(STAGES_DIMS[0]);
+		RotationButton.Selectable.OnInteract += () => {
+			_isRotating = true;
+			_mouseRotationPosition = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+			return false;
+		};
+		RotationButton.Selectable.OnInteractEnded += () => _isRotating = false;
 	}
 
 	protected void Update() {
@@ -75,6 +85,14 @@ public class OctominoModule : ModdedModule {
 				if (timer > 1) StrikeAndReset();
 				else Timer.Value = timer;
 				break;
+		}
+		if (_isRotating) {
+			Vector2 newMousePosition = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+			Vector2 dv2 = newMousePosition - _mouseRotationPosition;
+			_mouseRotationPosition = newMousePosition;
+			OctominoRenderer2D.Rotate(dv2);
+			OctominoRenderer3D.Rotate(dv2);
+			OctominoRenderer4D.Rotate(dv2);
 		}
 	}
 
@@ -136,7 +154,7 @@ public class OctominoModule : ModdedModule {
 			btn.Selectable.OnInteract += () => { OnButtonPressed(indexClosure); return false; };
 			_buttons[index] = btn;
 		}
-		Selectable.Children = selectables.ToArray();
+		Selectable.Children = Selectable.Children.Concat(selectables).ToArray();
 		Selectable.UpdateChildrenProperly();
 	}
 

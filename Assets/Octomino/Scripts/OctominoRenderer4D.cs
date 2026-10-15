@@ -19,12 +19,6 @@ public class OctominoRenderer4D : MonoBehaviour, IOctominoRenderer {
 
 	private readonly List<TesseractComponent> _tesseracts = new List<TesseractComponent>();
 
-	protected void Update() {
-		float x = Mathf.Clamp01(Input.mousePosition.x / Screen.width) * 2f - 1f;
-		float y = Mathf.Clamp01(Input.mousePosition.y / Screen.height) * 2f - 1f;
-		RendererContainer.localRotation = Quaternion.Euler(y * MOUSE_MAX_ROTATION_ANGLE + 30, 0, -x * MOUSE_MAX_ROTATION_ANGLE - 30);
-	}
-
 	public void Initialize(OctominoUtils.FaceProps[] puzzle, Color[] colors) {
 		Clear();
 		float containerScale;
@@ -59,6 +53,11 @@ public class OctominoRenderer4D : MonoBehaviour, IOctominoRenderer {
 	public void Clear() {
 		foreach (TesseractComponent tesseract in _tesseracts) Destroy(tesseract.gameObject);
 		_tesseracts.Clear();
+	}
+
+	public void Rotate(Vector2 dv2) {
+		RendererContainer.Rotate(Vector3.back, dv2.x, Space.World);
+		RendererContainer.Rotate(Vector3.right, dv2.y, Space.World);
 	}
 
 	private Matrix5x5 SlightRotation() {
