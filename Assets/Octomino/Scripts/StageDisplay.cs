@@ -2,6 +2,7 @@
 
 public class StageDisplay : MonoBehaviour {
 	public Renderer Renderer;
+	public KMSelectable Selectable;
 
 	private Color _outerColor; public Color OuterColor { get { return _outerColor; } set { Renderer.material.SetColor("_OuterColor", _outerColor = value); } }
 	private float _progress; public float Progress { get { return _progress; } set { Renderer.material.SetFloat("_Progress", _progress = value); } }

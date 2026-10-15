@@ -7,6 +7,7 @@ public class OctominoModule : ModdedModule {
 
 	public const int STAGES_COUNT = 5;
 	public const float TIME_TO_SOLVE = 60; // seconds
+	public const float RESETTING_TIME = 2f;
 
 	private enum STATUS {
 		CREATED = 0,
@@ -46,6 +47,8 @@ public class OctominoModule : ModdedModule {
 
 	private Vector2 _mouseRotationPosition;
 	private bool _isRotating = false;
+	private float _resettingTime;
+	private bool _isResetting = false;
 	private int _startButtonIndex;
 	private int _currentButtonIndex;
 	private int _passedStagesCount;
@@ -74,6 +77,15 @@ public class OctominoModule : ModdedModule {
 			_isRotating = false;
 			RotationButton.OnRelease();
 		};
+		StageDisplay.Selectable.OnInteract += () => {
+			_isResetting = true;
+			_resettingTime = Time.time;
+			return false;
+		};
+		StageDisplay.Selectable.OnInteractEnded += () => {
+			_isResetting = false;
+			StageDisplay.ResetProgress = 0f;
+		};
 	}
 
 	protected void Update() {
@@ -97,6 +109,24 @@ public class OctominoModule : ModdedModule {
 			OctominoRenderer2D.Rotate(dv2);
 			OctominoRenderer3D.Rotate(dv2);
 			OctominoRenderer4D.Rotate(dv2);
+		}
+		if (_isResetting) {
+			if (_status == STATUS.GENERATED) {
+				float progress = (Time.time - _resettingTime) / RESETTING_TIME;
+				if (progress < 1f) StageDisplay.ResetProgress = progress;
+				else {
+					_isResetting = false;
+					StageDisplay.ResetProgress = 0f;
+					_passedStagesCount = 0;
+					_timeOffset = 0f;
+					StageDisplay.Progress = 0;
+					GeneratePuzzle(STAGES_DIMS[0]);
+					Reset();
+				}
+			} else {
+				_isResetting = false;
+				StageDisplay.ResetProgress = 0;
+			}
 		}
 	}
 

@@ -136,7 +136,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4316102678639696}
   - component: {fileID: 33373890343484792}
-  - component: {fileID: 64630684180362818}
+  - component: {fileID: 135109579449852598}
   - component: {fileID: 23099171634591718}
   m_Layer: 0
   m_Name: Quad
@@ -216,6 +216,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4284870987682040}
   - component: {fileID: 114396188643097922}
+  - component: {fileID: 114573939573022720}
   m_Layer: 0
   m_Name: StageDisplay
   m_TagString: Untagged
@@ -326,6 +327,23 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1 &1878219213288110
+GameObject:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 4442360963226592}
+  - component: {fileID: 33704480196370946}
+  - component: {fileID: 114451893167725910}
+  m_Layer: 0
+  m_Name: Highlight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &1977390043546808
 GameObject:
   m_ObjectHideFlags: 1
@@ -417,6 +435,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4316102678639696}
+  - {fileID: 4442360963226592}
   m_Father: {fileID: 4231075346039920}
   m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -485,6 +504,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4231075346039920}
   m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &4442360963226592
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1878219213288110}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.0002, z: 0}
+  m_LocalScale: {x: 0.0335, y: 0.0005, z: 0.0335}
+  m_Children: []
+  m_Father: {fileID: 4284870987682040}
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &4461044919442618
 Transform:
@@ -835,6 +867,13 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1862759677906136}
   m_Mesh: {fileID: 4300000, guid: 5ab6c3be308beaa47b558e81d501cf7c, type: 3}
+--- !u!33 &33704480196370946
+MeshFilter:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1878219213288110}
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!33 &33926794862256548
 MeshFilter:
   m_ObjectHideFlags: 1
@@ -862,20 +901,6 @@ MeshCollider:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1691144618616512}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Convex: 0
-  m_CookingOptions: 14
-  m_SkinWidth: 0.01
-  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
---- !u!64 &64630684180362818
-MeshCollider:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1409708815965254}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
@@ -940,6 +965,7 @@ MonoBehaviour:
   Parent: {fileID: 0}
   Children:
   - {fileID: 114594335618980870}
+  - {fileID: 114573939573022720}
   IsPassThrough: 0
   ChildRowLength: 1
   Highlight: {fileID: 114816253228357190}
@@ -1021,6 +1047,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Renderer: {fileID: 23099171634591718}
+  Selectable: {fileID: 114573939573022720}
 --- !u!114 &114431508595955400
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1034,6 +1061,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShaderNames:
   - Octomino/DisplayBackWithTimer
+--- !u!114 &114451893167725910
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1878219213288110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -706292897, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  HighlightScale: {x: 1, y: 1, z: 1}
+  OutlineAmount: 0
 --- !u!114 &114473842423038176
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1057,6 +1097,29 @@ MonoBehaviour:
   OctominoRenderer2D: {fileID: 114785276178247072}
   OctominoRenderer3D: {fileID: 114829023305734110}
   OctominoRenderer4D: {fileID: 114988871034737994}
+--- !u!114 &114573939573022720
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1671605843142766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1702003387, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Parent: {fileID: 114099054442313776}
+  Children: []
+  IsPassThrough: 0
+  ChildRowLength: 0
+  Highlight: {fileID: 114451893167725910}
+  SelectableColliders:
+  - {fileID: 135109579449852598}
+  DefaultSelectableIndex: 0
+  AllowSelectionWrapX: 0
+  AllowSelectionWrapY: 0
+  ForceSelectionHighlight: 0
+  ForceInteractionHighlight: 0
 --- !u!114 &114594335618980870
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1149,3 +1212,15 @@ MonoBehaviour:
     type: 2}
   TesseractsContainer: {fileID: 4106267869737474}
   RendererContainer: {fileID: 4383889808073154}
+--- !u!135 &135109579449852598
+SphereCollider:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1409708815965254}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.015
+  m_Center: {x: 0, y: 0, z: 0}
