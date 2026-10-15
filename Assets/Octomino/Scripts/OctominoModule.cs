@@ -67,9 +67,13 @@ public class OctominoModule : ModdedModule {
 		RotationButton.Selectable.OnInteract += () => {
 			_isRotating = true;
 			_mouseRotationPosition = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+			RotationButton.OnHeld();
 			return false;
 		};
-		RotationButton.Selectable.OnInteractEnded += () => _isRotating = false;
+		RotationButton.Selectable.OnInteractEnded += () => {
+			_isRotating = false;
+			RotationButton.OnRelease();
+		};
 	}
 
 	protected void Update() {

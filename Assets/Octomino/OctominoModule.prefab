@@ -1008,6 +1008,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Selectable: {fileID: 114594335618980870}
+  SymbolRenderer: {fileID: 23922000098257310}
 --- !u!114 &114396188643097922
 MonoBehaviour:
   m_ObjectHideFlags: 1
