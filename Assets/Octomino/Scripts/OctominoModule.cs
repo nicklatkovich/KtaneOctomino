@@ -253,6 +253,8 @@ public class OctominoModule : ModdedModule {
 		// int maxDistance = 6 - dims;
 		int maxDistance = dims == 2 ? 4 : 3;
 		_puzzle = OctominoUtils.GeneratePuzzle(dims, OctominoUtils.SIZE, maxDistance);
+		// 3 - dim index of 4th dimension (counting from 0)
+		if (dims == 4) _puzzle = OctominoUtils.RotateToMaximizeDimensionWidth(dims, _puzzle, 3);
 		ClearAndDisableOctominoRenderers();
 		IOctominoRenderer renderer = GetOctominoRenderer(dims);
 		renderer.enabled = true;

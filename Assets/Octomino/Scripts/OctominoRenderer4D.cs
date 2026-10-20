@@ -7,7 +7,7 @@ using MultiDimVectorFloat = MultiDimVector<float>;
 
 public class OctominoRenderer4D : MonoBehaviour, IOctominoRenderer {
 	public const int DIMENSIONS = 4;
-	public const float FOV = 120f;
+	public const float FOV = 90f;
 	public const float MOUSE_MAX_ROTATION_ANGLE = 45; // deg
 
 	public int Dimensions { get { return DIMENSIONS; } }

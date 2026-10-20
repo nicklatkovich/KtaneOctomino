@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 using MultiDimVectorInt = MultiDimVector<int>;
 using MultiDimVectorFloat = MultiDimVector<float>;
+
+using Array = System.Array;
 
 public static class OctominoUtils {
 	public const int SIZE = 8;
@@ -88,6 +89,61 @@ public static class OctominoUtils {
 		}
 		MultiDimVectorInt positionOffset = new MultiDimVectorInt(Enumerable.Range(0, dims).Select(i => facesPositions.Min(p => p[i])).ToArray());
 		return Enumerable.Range(0, size).Select(index => new FaceProps(index, facesPositions[index].Add(positionOffset), facesAdjacentIndices[index].ToArray())).ToArray();
+	}
+
+	// Swaps dimensions to make puzzle more diverse.
+	// Module uses this function only for 4D-Octomino to feature 4th dimension.
+	public static FaceProps[] RotateToMaximizeDimensionWidth(int dims, FaceProps[] puzzle, int dimensionIndex) {
+		// for (int i = 0; i < puzzle.Length; i++) Debug.LogFormat("{0}: {1}", i, puzzle[i].position.Value.Join(","));
+		int maxWidth = 0;
+		List<int> maxWidthDimensionsList = new List<int>();
+		for (int dim = 0; dim < dims; dim++) {
+			int min = int.MaxValue;
+			int max = int.MinValue;
+			foreach (FaceProps face in puzzle) {
+				min = Mathf.Min(min, face.position[dim]);
+				max = Mathf.Max(max, face.position[dim]);
+			}
+			int width = max - min + 1;
+			Debug.LogFormat("{0}th dimension minmax: [{1};{2}] (width={3})", dim, min, max, width);
+			if (width > maxWidth) {
+				maxWidth = width;
+				maxWidthDimensionsList = new List<int>() { dim };
+			} else if (width == maxWidth) maxWidthDimensionsList.Add(dim);
+		}
+		Debug.LogFormat("maxWidth={0}. Dims: ({1})", maxWidth, maxWidthDimensionsList.Join(","));
+		Assert.IsTrue(maxWidth > 0, "Failed to calculate maxWidth for puzzle");
+		int[] maxWidthDimensions = maxWidthDimensionsList.ToArray();
+		int maxScore = -1;
+		List<int> maxScoreDimensions = new List<int>();
+		for (int i = 0; i < maxWidthDimensions.Length; i++) {
+			int dim = maxWidthDimensions[i];
+			Dictionary<int, int> cellsCount = new Dictionary<int, int>();
+			foreach (FaceProps face in puzzle) {
+				int pos = face.position[dim];
+				if (!cellsCount.ContainsKey(pos)) cellsCount[pos] = 1;
+				else cellsCount[pos] += 1;
+			}
+			// score calculates diversity by multiplying cells count for each dimension's position,
+			// e.g. [3,1] is less diverse than [2,2] while having the same number of cells
+			int score = 1;
+			foreach (int count in cellsCount.Values) score *= count;
+			Debug.LogFormat("{0}th dim score:{1} ({2})", dim, score, cellsCount.Values.Join(","));
+			if (score > maxScore) {
+				maxScore = score;
+				maxScoreDimensions = new List<int>() { dim };
+			} else if (score == maxScore) maxScoreDimensions.Add(dim);
+		}
+		int maxScoreDim = maxScoreDimensions.PickRandom();
+		if (maxScoreDim == dimensionIndex) return puzzle; // is best dimension already
+		return puzzle.Select(face => {
+			int[] pos = face.position.Value.ToArray();
+			// swap dimensions
+			int tmp = pos[dimensionIndex];
+			pos[dimensionIndex] = pos[maxScoreDim];
+			pos[maxScoreDim] = tmp;
+			return new FaceProps(face.index, new MultiDimVectorInt(pos), face.adjacentIndices);
+		}).ToArray();
 	}
 
 	public static void CalculatePuzzleOffsetAndScale(int dims, FaceProps[] puzzle, out float scale, out MultiDimVectorFloat offset) {
