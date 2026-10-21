@@ -6,7 +6,7 @@ using wawa.Modules;
 public class OctominoModule : ModdedModule {
 
 	public const int STAGES_COUNT = 5;
-	public const float TIME_TO_SOLVE = 60; // seconds
+	public const float TIME_TO_SOLVE = 90; // seconds
 	public const float RESETTING_TIME = 2f;
 
 	private enum STATUS {
@@ -53,8 +53,8 @@ public class OctominoModule : ModdedModule {
 	private int _currentButtonIndex;
 	private int _passedStagesCount;
 	private STATUS _status = STATUS.CREATED;
-	private float _startedAt;
-	private float _timeOffset = 0f;
+	private float _solvingTimer = 0f;
+	private float _timeCheckPoint = 0f;
 	private bool[] _isVisited;
 	private int[] _buttonToFaceIndex;
 	private int[] _faceToButtonIndex;
@@ -64,7 +64,6 @@ public class OctominoModule : ModdedModule {
 	protected void Start() {
 		CreateButtons();
 		StageDisplay.OuterColor = _colors.PickRandom();
-		_startedAt = Time.time;
 		_colors.Shuffle();
 		GeneratePuzzle(STAGES_DIMS[0]);
 		RotationButton.Selectable.OnInteract += () => {
@@ -89,18 +88,15 @@ public class OctominoModule : ModdedModule {
 	}
 
 	protected void Update() {
-		switch (_status) {
-			case STATUS.CREATED:
-				float loader = (Time.time - _startedAt) / SECONDS_BEFORE_ACTIVATION;
-				Timer.Value = loader;
-				StageDisplay.Progress = loader;
-				StageDisplay.ResetProgress = loader;
-				break;
-			case STATUS.STARTED:
-				float timer = (Time.time - _startedAt + _timeOffset) / TIME_TO_SOLVE;
-				if (timer > 1) StrikeAndReset();
-				else Timer.Value = timer;
-				break;
+		if (_status == STATUS.CREATED) {
+			Timer.Value += Time.deltaTime / SECONDS_BEFORE_ACTIVATION;
+			StageDisplay.Progress = Timer.Value;
+			StageDisplay.ResetProgress = Timer.Value;
+		} else if (_status == STATUS.STARTED || (_status == STATUS.GENERATED && _passedStagesCount >= 3)) {
+			_solvingTimer += Time.deltaTime;
+			float timer = _solvingTimer / TIME_TO_SOLVE;
+			if (timer > 1) StrikeAndReset();
+			else Timer.Value = timer;
 		}
 		if (_isRotating) {
 			Vector2 newMousePosition = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
@@ -118,7 +114,8 @@ public class OctominoModule : ModdedModule {
 					_isResetting = false;
 					StageDisplay.ResetProgress = 0f;
 					_passedStagesCount = 0;
-					_timeOffset = 0f;
+					_solvingTimer = 0f;
+					_timeCheckPoint = 0f;
 					StageDisplay.Progress = 0;
 					GeneratePuzzle(STAGES_DIMS[0]);
 					Reset();
@@ -140,9 +137,10 @@ public class OctominoModule : ModdedModule {
 
 	private void OnStagePassed() {
 		_passedStagesCount += 1;
-		_timeOffset = (Time.time - _startedAt + _timeOffset) / 2f;
-		StageDisplay.Progress = (float)_passedStagesCount / STAGES_COUNT;
 		if (_passedStagesCount < STAGES_COUNT) {
+			_solvingTimer /= 2f;
+			if (_passedStagesCount < 3) _timeCheckPoint = _solvingTimer;
+			StageDisplay.Progress = (float)_passedStagesCount / STAGES_COUNT;
 			GeneratePuzzle(STAGES_DIMS[_passedStagesCount]);
 			Reset();
 		} else {
@@ -167,7 +165,7 @@ public class OctominoModule : ModdedModule {
 		_startButtonIndex = Random.Range(0, OctominoUtils.SIZE);
 		_buttons[_startButtonIndex].Renderer.enabled = true;
 		_status = STATUS.GENERATED;
-		Timer.Value = _timeOffset / TIME_TO_SOLVE;
+		Timer.Value = _solvingTimer / TIME_TO_SOLVE;
 	}
 
 	private void CreateButtons() {
@@ -201,7 +199,6 @@ public class OctominoModule : ModdedModule {
 				_currentButtonIndex = index;
 				_isVisited[_buttonToFaceIndex[index]] = true;
 				_status = STATUS.STARTED;
-				_startedAt = Time.time;
 				Audio.PlaySoundAtTransform(START_SOUND, transform);
 				return true;
 			case STATUS.STARTED:
@@ -244,6 +241,11 @@ public class OctominoModule : ModdedModule {
 
 	private bool StrikeAndReset() {
 		Strike();
+		_solvingTimer = _timeCheckPoint;
+		if (_passedStagesCount >= 3) {
+			_passedStagesCount = 2;
+			GeneratePuzzle(STAGES_DIMS[_passedStagesCount]);
+		}
 		Reset();
 		return true;
 	}
