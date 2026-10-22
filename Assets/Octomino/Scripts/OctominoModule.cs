@@ -67,6 +67,8 @@ public class OctominoModule : ModdedModule {
 	// sounds
 	private const string START_SOUND = "OctominoStart";
 	private const string MOVE_SOUND = "OctominoMove";
+	private const string RESTART_SOUND = "OctominoRestart";
+	private const string CORRECT_SOUND = "Correct";
 
 	private readonly int[] STAGES_DIMS = new int[] { 2, 3, 4, 3, 2 };
 	// private readonly int[] STAGES_DIMS = new int[] { 3, 3, 3, 3, 3 };
@@ -111,15 +113,6 @@ public class OctominoModule : ModdedModule {
 			_isRotating = false;
 			RotationButton.OnRelease();
 		};
-		StageDisplay.Selectable.OnInteract += () => {
-			_isResetting = true;
-			_resettingTime = Time.time;
-			return false;
-		};
-		StageDisplay.Selectable.OnInteractEnded += () => {
-			_isResetting = false;
-			StageDisplay.ResetProgress = 0f;
-		};
 	}
 
 	protected void Update() {
@@ -157,6 +150,7 @@ public class OctominoModule : ModdedModule {
 					_offset0 = OFFSET_TYPE.NO_OFFSET;
 					_offset1 = OFFSET_TYPE.NO_OFFSET;
 					ResetOffsetTypesQueue();
+					Audio.PlaySoundAtTransform(RESTART_SOUND, transform);
 				}
 			} else {
 				_isResetting = false;
@@ -172,6 +166,15 @@ public class OctominoModule : ModdedModule {
 		StageDisplay.OuterColor_0 = Color.black;
 		StageDisplay.OuterColor_1 = Color.black;
 		Reset();
+		StageDisplay.Selectable.OnInteract += () => {
+			_isResetting = true;
+			_resettingTime = Time.time;
+			return false;
+		};
+		StageDisplay.Selectable.OnInteractEnded += () => {
+			_isResetting = false;
+			StageDisplay.ResetProgress = 0f;
+		};
 	}
 
 	private void OnStagePassed() {
@@ -182,6 +185,7 @@ public class OctominoModule : ModdedModule {
 			if (_passedStagesCount < 3) _timeCheckPoint = _solvingTimer;
 			GeneratePuzzle(STAGES_DIMS[_passedStagesCount]);
 			Reset();
+			Audio.PlaySoundAtTransform(CORRECT_SOUND, transform);
 		} else {
 			Solve();
 			Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.CorrectChime, transform);
