@@ -2,7 +2,8 @@
 	Properties {
 		_Progress ("Progress", float) = 0
 		_ResetProgress ("ResetProgress", float) = 0
-		_OuterColor ("OuterColor", Color) = (0, 0, 0, 1)
+		_OuterColor_0 ("OuterColor #0", Color) = (0, 0, 0, 1)
+		_OuterColor_1 ("OuterColor #1", Color) = (0, 0, 0, 1)
 	}
 	SubShader {
 		Tags { "RenderType" = "Opaque" }
@@ -27,7 +28,8 @@
 
 			float _Progress;
 			float _ResetProgress;
-			float4 _OuterColor;
+			float4 _OuterColor_0;
+			float4 _OuterColor_1;
 
 			v2f vert (appdata v) {
 				v2f o;
@@ -43,7 +45,11 @@
 				if (radius > 0.85) return 0;
                 float angle = 1 * PI / 2 - atan2(pos.y, pos.x);
 				float progress = min(frac(angle / (2.0 * PI)), 0.99); // fix thin around 0
-				if (radius > 0.7) return _ResetProgress < progress ? _OuterColor : float4(1, 1, 1, 1);
+				if (radius > 0.7) {
+					float4 offsetColor = (progress + _Time.y / 8.0) % 1.0 <= 0.5 ? _OuterColor_0 : _OuterColor_1;
+					if (_ResetProgress >= progress) offsetColor.rgb = 1.0 - offsetColor.rgb;
+					return offsetColor;
+				}
 				if (radius > 0.55 || radius < 0.2) return 0;
 				return _Progress < progress ? 0 : float4(0, 1, 0, 1);
 			}

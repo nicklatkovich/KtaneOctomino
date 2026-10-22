@@ -1087,6 +1087,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Selectable: {fileID: 114099054442313776}
   Audio: {fileID: 114148873024759948}
+  BombInfo: {fileID: 114169523937389728}
   ButtonPrefab: {fileID: 114678704866187224, guid: de6224ffe54324493a8c753e76134e74,
     type: 2}
   ButtonsContainer: {fileID: 4954666281143128}
