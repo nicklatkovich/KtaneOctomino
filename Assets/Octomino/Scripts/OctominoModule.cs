@@ -87,6 +87,7 @@ public class OctominoModule : ModdedModule {
 	private STATUS _status = STATUS.CREATED;
 	private float _solvingTimer = 0f;
 	private float _timeCheckPoint = 0f;
+	private string _path;
 	private bool[] _isVisited;
 	private int[] _buttonToFaceIndex;
 	private int[] _faceToButtonIndex;
@@ -100,7 +101,6 @@ public class OctominoModule : ModdedModule {
 		CreateButtons();
 		StageDisplay.OuterColor_0 = OFFSET_TYPES_COLORS.PickRandom();
 		StageDisplay.OuterColor_1 = OFFSET_TYPES_COLORS.PickRandom();
-		_colors.Shuffle();
 		ResetOffsetTypesQueue();
 		GeneratePuzzle(STAGES_DIMS[0]);
 		RotationButton.Selectable.OnInteract += () => {
@@ -123,8 +123,10 @@ public class OctominoModule : ModdedModule {
 		} else if (_status == STATUS.STARTED || (_status == STATUS.GENERATED && _passedStagesCount >= 3)) {
 			_solvingTimer += Time.deltaTime;
 			float timer = _solvingTimer / TIME_TO_SOLVE;
-			if (timer > 1) StrikeAndReset();
-			else Timer.Value = timer;
+			if (timer > 1) {
+				CustomLogger("Time's up. Strike.");
+				StrikeAndReset();
+			} else Timer.Value = timer;
 		}
 		if (_isRotating) {
 			Vector2 newMousePosition = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
@@ -139,6 +141,7 @@ public class OctominoModule : ModdedModule {
 				float progress = (Time.time - _resettingTime) / RESETTING_TIME;
 				if (progress < 1f) StageDisplay.ResetProgress = progress;
 				else {
+					CustomLogger("Manual Restart.");
 					_isResetting = false;
 					StageDisplay.ResetProgress = 0f;
 					_passedStagesCount = 0;
@@ -179,14 +182,17 @@ public class OctominoModule : ModdedModule {
 
 	private void OnStagePassed() {
 		_passedStagesCount += 1;
+		CustomLogger("Stage #{0} completed", _passedStagesCount);
 		StageDisplay.Progress = (float)_passedStagesCount / STAGES_COUNT;
 		if (_passedStagesCount < STAGES_COUNT) {
 			_solvingTimer /= 2f;
+			CustomLogger("Next stage starting time: {0}s", _solvingTimer.ToString("#.###"));
 			if (_passedStagesCount < 3) _timeCheckPoint = _solvingTimer;
 			GeneratePuzzle(STAGES_DIMS[_passedStagesCount]);
 			Reset();
 			Audio.PlaySoundAtTransform(CORRECT_SOUND, transform);
 		} else {
+			CustomLogger("Module solved");
 			Solve();
 			Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.CorrectChime, transform);
 			_status = STATUS.SOLVED;
@@ -206,19 +212,23 @@ public class OctominoModule : ModdedModule {
 			button.BorderSize = ButtonComponent.DEFAULT_BORDER_SIZE;
 		}
 		_finishButtonIndex = Random.Range(0, OctominoUtils.SIZE);
+		CustomLogger("Finish button: #{0}({1})", _finishButtonIndex + 1, ColorToSymbol(_colors[_buttonToFaceIndex[_finishButtonIndex]]));
 		if (_passedStagesCount == 0) _offset0 = OFFSET_TYPE.NO_OFFSET;
 		else if (_passedStagesCount == 1) _offset0 = OFFSET_TYPE.STAGE_NUMBER;
 		else _offset0 = GetOffsetType(null);
 		_offset1 = _passedStagesCount < 4 ? OFFSET_TYPE.NO_OFFSET : GetOffsetType(_offset0);
 		StageDisplay.OuterColor_0 = OFFSET_TYPES_COLORS[(int)_offset0];
 		StageDisplay.OuterColor_1 = OFFSET_TYPES_COLORS[(int)(_offset1 == OFFSET_TYPE.NO_OFFSET ? _offset0 : _offset1)];
+		LogOffsets();
 		_buttons[_finishButtonIndex].Renderer.enabled = true;
 		_status = STATUS.GENERATED;
 		Timer.Value = _solvingTimer / TIME_TO_SOLVE;
+		_path = "";
 	}
 
 	private void CreateButtons() {
 		_offsetDirection = Random.Range(0, 2) == 0 ? 1 : -1;
+		CustomLogger("Offset direction: {0}", _offsetDirection < 0 ? "LEFT" : "RIGHT");
 		float firstButtonXOffset = -(OctominoUtils.SIZE - 1) * BUTTONS_OFFSET;
 		float firstButtonYOffset = BUTTONS_OFFSET * (-_offsetDirection);
 		List<KMSelectable> selectables = new List<KMSelectable>();
@@ -241,28 +251,44 @@ public class OctominoModule : ModdedModule {
 	}
 
 	private bool OnButtonPressed(int index) {
+		int faceIndex = _buttonToFaceIndex[index];
+		string faceSymbol = ColorToSymbol(_colors[faceIndex]);
 		switch (_status) {
 			case STATUS.GENERATED:
+				if (_offset0 == OFFSET_TYPE.STRIKES_COUNT || _offset1 == OFFSET_TYPE.STRIKES_COUNT) CustomLogger("Current strikes count: {0}", BombInfo.GetStrikes());
 				int startButtonIndex = TrueModulo(_finishButtonIndex + _offsetDirection * (GetOffset(_offset0) + GetOffset(_offset1)), OctominoUtils.SIZE);
-				if (startButtonIndex != index) return StrikeAndReset();
+				if (startButtonIndex != index) {
+					CustomLogger("Expected starting button: {0}. Pressed button: {1}. Strike.", startButtonIndex + 1, index + 1);
+					return StrikeAndReset(disableFallback: true);
+				}
 				for (int i = 0; i < OctominoUtils.SIZE; i++) _buttons[i].Renderer.enabled = true;
 				_buttons[index].BorderSize = 1;
 				_currentButtonIndex = index;
-				_isVisited[_buttonToFaceIndex[index]] = true;
+				_isVisited[faceIndex] = true;
 				_status = STATUS.STARTED;
+				_path = faceSymbol;
+				CustomLogger("Puzzle started from button #{0}({1})", startButtonIndex + 1, _path);
 				Audio.PlaySoundAtTransform(START_SOUND, transform);
 				return true;
 			case STATUS.STARTED:
+				_path += faceSymbol;
 				if (index == _currentButtonIndex) {
-					if (index == _finishButtonIndex && _isVisited.All(v => v)) {
-						_buttons[index].BorderSize = ButtonComponent.DEFAULT_BORDER_SIZE;
-						OnStagePassed();
-						return true;
+					LogPathAndTimer();
+					if (index != _finishButtonIndex) {
+						CustomLogger("Path is closed with an invalid button: #{0}({1}). Strike.", index + 1, faceSymbol);
+						return StrikeAndReset();
 					}
-					return StrikeAndReset();
+					int[] notVisited = _isVisited.Select((v, i) => new { v, i }).Where(p => !p.v).Select(p => p.i).ToArray();
+					if (notVisited.Length > 0) {
+						string info = notVisited.Select(i => string.Format("#{0}({1})", i + 1, ColorToSymbol(_colors[_buttonToFaceIndex[i]]))).Join("; ");
+						CustomLogger("Path is closed with unvisited colors: {0}. Strike.", info);
+						return StrikeAndReset();
+					}
+					_buttons[index].BorderSize = ButtonComponent.DEFAULT_BORDER_SIZE;
+					OnStagePassed();
+					return true;
 				}
 				bool isAdjacentToCurrentPosition = false;
-				int faceIndex = _buttonToFaceIndex[index];
 				int minUnvisitedButtonIndex = int.MaxValue;
 				int[] adjacentIndices = _puzzle[_buttonToFaceIndex[_currentButtonIndex]].adjacentIndices;
 				for (int i = 0; i < adjacentIndices.Length; i++) {
@@ -271,18 +297,20 @@ public class OctominoModule : ModdedModule {
 					if (!_isVisited[adjacentFace]) minUnvisitedButtonIndex = Mathf.Min(minUnvisitedButtonIndex, _faceToButtonIndex[adjacentFace]);
 				}
 				if (!isAdjacentToCurrentPosition) {
-					Log("Pressed button not adjacent to the current location");
+					LogPathAndTimer();
+					CustomLogger("Pressed the button not adjacent to the current location. Strike.");
 					return StrikeAndReset();
 				}
 				if (minUnvisitedButtonIndex != int.MaxValue && minUnvisitedButtonIndex != index) {
-					Log("Moved to visited face while unvisited adjacent exists");
+					LogPathAndTimer();
+					string expectedFaceSymbol = ColorToSymbol(_colors[_buttonToFaceIndex[minUnvisitedButtonIndex]]);
+					CustomLogger("Moved to #{0}({1}) while moving to #{2}({3}) is expected. Strike.", index + 1, faceSymbol, minUnvisitedButtonIndex + 1, expectedFaceSymbol);
 					return StrikeAndReset();
 				}
 				_buttons[_currentButtonIndex].BorderSize = ButtonComponent.DEFAULT_BORDER_SIZE;
 				_buttons[index].BorderSize = 1f;
 				_currentButtonIndex = index;
 				_isVisited[faceIndex] = true;
-				Log("Moved to button #{0} (face {1})", index, faceIndex);
 				Audio.PlaySoundAtTransform(MOVE_SOUND, transform);
 				return true;
 			default:
@@ -290,13 +318,17 @@ public class OctominoModule : ModdedModule {
 		}
 	}
 
-	private bool StrikeAndReset() {
+	private bool StrikeAndReset(bool disableFallback = false) {
 		Strike();
-		_solvingTimer = _timeCheckPoint;
 		if (_passedStagesCount >= 3) {
-			_passedStagesCount = 2;
-			GeneratePuzzle(STAGES_DIMS[_passedStagesCount]);
-		}
+			if (!disableFallback) {
+				_solvingTimer = _timeCheckPoint;
+				_passedStagesCount = 2;
+				CustomLogger("Falling back to stage #3. Starting time: {0}s", _solvingTimer.ToString("#.###"));
+				StageDisplay.Progress = (float)_passedStagesCount / STAGES_COUNT;
+				GeneratePuzzle(STAGES_DIMS[_passedStagesCount]);
+			}
+		} else _solvingTimer = _timeCheckPoint;
 		Reset();
 		return true;
 	}
@@ -308,6 +340,12 @@ public class OctominoModule : ModdedModule {
 		_puzzle = OctominoUtils.GeneratePuzzle(dims, OctominoUtils.SIZE, maxDistance);
 		// 3 - dim index of 4th dimension (counting from 0)
 		if (dims == 4) _puzzle = OctominoUtils.RotateToMaximizeDimensionWidth(dims, _puzzle, 3);
+		_colors.Shuffle();
+		CustomLogger("Stage #{0}. Generated puzzle ({1}D):", _passedStagesCount + 1, dims);
+		for (int i = 0; i < _puzzle.Length; i++) {
+			string adjacents = _puzzle[i].adjacentIndices.Select(j => ColorToSymbol(_colors[j])).Join("");
+			CustomLogger("{0}: coord={{{1}}}; adjacent={2}", ColorToSymbol(_colors[i]), _puzzle[i].position.Value.Join(","), adjacents);
+		}
 		ClearAndDisableOctominoRenderers();
 		IOctominoRenderer renderer = GetOctominoRenderer(dims);
 		renderer.enabled = true;
@@ -360,7 +398,57 @@ public class OctominoModule : ModdedModule {
 		}
 	}
 
+	protected void CustomLogger(string str, params object[] args) {
+		Log(str, args);
+	}
+
+	private void LogPathAndTimer() {
+		CustomLogger("Path: {0}. Timer: {1}s", _path, _solvingTimer.ToString("#.###"));
+	}
+
+	private void LogOffsets() {
+		if (_offset1 != OFFSET_TYPE.NO_OFFSET) {
+			int off1 = LogOffsetCalculation(_offset0, "Offset 1/2: ");
+			int off2 = LogOffsetCalculation(_offset1, "Offset 2/2: ");
+			CustomLogger("Total offset: {0}+{1} = {2}", off1, off2, off1 + off2);
+		} else if (_offset0 != OFFSET_TYPE.NO_OFFSET) LogOffsetCalculation(_offset0, "Offset: ");
+		else CustomLogger("No offset");
+	}
+
+	private int LogOffsetCalculation(OFFSET_TYPE offset, string prefix = "") {
+		int result = GetOffset(offset);
+		CustomLogger("{0}{1} ({2}) = {3}", prefix, ColorToSymbol(OFFSET_TYPES_COLORS[(int)offset]), GetOffsetDescriptor(offset), result);
+		return result;
+	}
+
+	private string GetOffsetDescriptor(OFFSET_TYPE offset) {
+		switch (offset) {
+			case OFFSET_TYPE.NO_OFFSET: return "No offset";
+			case OFFSET_TYPE.STAGE_NUMBER: return "Stage number";
+			case OFFSET_TYPE.PORTS_COUNT: return "Ports count";
+			case OFFSET_TYPE.BATTERIES_COUNT: return "Batteries count";
+			case OFFSET_TYPE.INDICATORS_COUNT: return "Indicators count";
+			case OFFSET_TYPE.STRIKES_COUNT: return "Strikes count";
+			default: throw new System.NotImplementedException();
+		}
+	}
+
 	private static int TrueModulo(int a, int b) {
 		return ((a % b) + b) % b;
+	}
+
+	private static string ColorToSymbol(Color clr) {
+		string result = string.Format("#{0}", ColorUtility.ToHtmlStringRGB(clr));
+		switch (result) {
+			case "#FF0000": return "R";
+			case "#00FF00": return "G";
+			case "#0000FF": return "B";
+			case "#00FFFF": return "C";
+			case "#FF00FF": return "M";
+			case "#FFEB04": return "Y";
+			case "#FFFFFF": return "W";
+			case "#6600FF": return "P";
+			default: return result;
+		}
 	}
 }

@@ -88,7 +88,7 @@ public static class OctominoUtils {
 			positionToIndexMap[pos] = index;
 		}
 		MultiDimVectorInt positionOffset = new MultiDimVectorInt(Enumerable.Range(0, dims).Select(i => facesPositions.Min(p => p[i])).ToArray());
-		return Enumerable.Range(0, size).Select(index => new FaceProps(index, facesPositions[index].Add(positionOffset), facesAdjacentIndices[index].ToArray())).ToArray();
+		return Enumerable.Range(0, size).Select(index => new FaceProps(index, facesPositions[index].Sub(positionOffset), facesAdjacentIndices[index].ToArray())).ToArray();
 	}
 
 	// Swaps dimensions to make puzzle more diverse.
@@ -105,13 +105,13 @@ public static class OctominoUtils {
 				max = Mathf.Max(max, face.position[dim]);
 			}
 			int width = max - min + 1;
-			Debug.LogFormat("{0}th dimension minmax: [{1};{2}] (width={3})", dim, min, max, width);
+			// Debug.LogFormat("{0}th dimension minmax: [{1};{2}] (width={3})", dim, min, max, width);
 			if (width > maxWidth) {
 				maxWidth = width;
 				maxWidthDimensionsList = new List<int>() { dim };
 			} else if (width == maxWidth) maxWidthDimensionsList.Add(dim);
 		}
-		Debug.LogFormat("maxWidth={0}. Dims: ({1})", maxWidth, maxWidthDimensionsList.Join(","));
+		// Debug.LogFormat("maxWidth={0}. Dims: ({1})", maxWidth, maxWidthDimensionsList.Join(","));
 		Assert.IsTrue(maxWidth > 0, "Failed to calculate maxWidth for puzzle");
 		int[] maxWidthDimensions = maxWidthDimensionsList.ToArray();
 		int maxScore = -1;
@@ -128,7 +128,7 @@ public static class OctominoUtils {
 			// e.g. [3,1] is less diverse than [2,2] while having the same number of cells
 			int score = 1;
 			foreach (int count in cellsCount.Values) score *= count;
-			Debug.LogFormat("{0}th dim score:{1} ({2})", dim, score, cellsCount.Values.Join(","));
+			// Debug.LogFormat("{0}th dim score:{1} ({2})", dim, score, cellsCount.Values.Join(","));
 			if (score > maxScore) {
 				maxScore = score;
 				maxScoreDimensions = new List<int>() { dim };
