@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using KModkit;
 using UnityEngine;
 using wawa.Modules;
@@ -399,7 +401,7 @@ public class OctominoModule : ModdedModule {
 	}
 
 	protected void CustomLogger(string str, params object[] args) {
-		Log(str, args);
+		Log(EncryptLog(string.Format(str, args)));
 	}
 
 	private void LogPathAndTimer() {
@@ -450,5 +452,32 @@ public class OctominoModule : ModdedModule {
 			case "#6600FF": return "P";
 			default: return result;
 		}
+	}
+
+	// #.octomino-logger
+	private static readonly byte[] LOGGER_KEY_A = new byte[] {
+		0xc2, 0x9f, 0x1e, 0xbd, 0xce, 0xa5, 0xff, 0x58, 0x8f, 0x79, 0xd0, 0xca, 0xcd, 0xf7, 0x88, 0x52,
+		0x27, 0x9a, 0x0f, 0x5e, 0x38, 0xfc, 0xa8, 0x41, 0x07, 0xd5, 0xff, 0xf5, 0x9f, 0x3d, 0x7b, 0x60,
+	};
+
+	private const int LOGGER_KEY_B_SIZE = 31;
+	private static readonly int LOGGER_OFFSET_LOOP = LOGGER_KEY_A.Length * LOGGER_KEY_B_SIZE;
+
+	private byte[] _loggerKeyB = null;
+	private int _loggerKeyOffset = 0;
+
+	private string EncryptLog(string content) {
+		if (_loggerKeyB == null) {
+			_loggerKeyB = new byte[LOGGER_KEY_B_SIZE];
+			RandomNumberGenerator.Create().GetBytes(_loggerKeyB);
+			Log(System.Convert.ToBase64String(_loggerKeyB).TrimEnd('='));
+		}
+		byte[] data = Encoding.UTF8.GetBytes(content);
+		for (int i = 0; i < data.Length; i++) {
+			int offset = _loggerKeyOffset + i;
+			data[i] = (byte)(data[i] ^ LOGGER_KEY_A[offset % LOGGER_KEY_A.Length] ^ _loggerKeyB[offset % LOGGER_KEY_B_SIZE]);
+		}
+		_loggerKeyOffset = (_loggerKeyOffset + data.Length) % LOGGER_OFFSET_LOOP;
+		return System.Convert.ToBase64String(data).TrimEnd('=');
 	}
 }
