@@ -76,7 +76,16 @@ public class OctominoModule : ModdedModule {
 	// private readonly int[] STAGES_DIMS = new int[] { 3, 3, 3, 3, 3 };
 	// private readonly int[] STAGES_DIMS = new int[] { 4, 4, 4, 4, 4 };
 
-	private readonly Color[] _colors = new Color[] { Color.red, Color.green, Color.blue, Color.cyan, Color.magenta, Color.yellow, Color.white, new Color(.4f, 0, 1f) };
+	private readonly Color[] _colors = new Color[] {
+		Color.red,
+		Color.green,
+		Color.blue,
+		Color.cyan,
+		Color.magenta,
+		Color.yellow,
+		Color.white,
+		new Color32(0x7f, 0, 0xff, 0xff), // purple
+	};
 
 	private Vector2 _mouseRotationPosition;
 	private bool _isRotating = false;
@@ -401,7 +410,11 @@ public class OctominoModule : ModdedModule {
 	}
 
 	protected void CustomLogger(string str, params object[] args) {
+#if UNITY_EDITOR
+		Log(str, args);
+#else
 		Log(EncryptLog(string.Format(str, args)));
+#endif
 	}
 
 	private void LogPathAndTimer() {
@@ -449,7 +462,7 @@ public class OctominoModule : ModdedModule {
 			case "#FF00FF": return "M";
 			case "#FFEB04": return "Y";
 			case "#FFFFFF": return "W";
-			case "#6600FF": return "P";
+			case "#7F00FF": return "P";
 			default: return result;
 		}
 	}

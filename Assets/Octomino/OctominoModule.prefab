@@ -138,6 +138,7 @@ GameObject:
   - component: {fileID: 33373890343484792}
   - component: {fileID: 135109579449852598}
   - component: {fileID: 23099171634591718}
+  - component: {fileID: 114508790312544900}
   m_Layer: 0
   m_Name: Quad
   m_TagString: Untagged
@@ -235,6 +236,7 @@ GameObject:
   - component: {fileID: 33007927820734630}
   - component: {fileID: 64253559943787206}
   - component: {fileID: 23350723652262258}
+  - component: {fileID: 114184140339096004}
   m_Layer: 0
   m_Name: Button
   m_TagString: Untagged
@@ -355,6 +357,7 @@ GameObject:
   - component: {fileID: 33244017244912796}
   - component: {fileID: 64163119234796714}
   - component: {fileID: 23922000098257310}
+  - component: {fileID: 114550323264318134}
   m_Layer: 0
   m_Name: Quad
   m_TagString: Untagged
@@ -1010,6 +1013,19 @@ MonoBehaviour:
   m_Script: {fileID: 2144496390, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &114184140339096004
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1691144618616512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1005838349, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShaderNames:
+  - Unlit/Color
 --- !u!114 &114251899959322248
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1098,6 +1114,32 @@ MonoBehaviour:
   OctominoRenderer2D: {fileID: 114785276178247072}
   OctominoRenderer3D: {fileID: 114829023305734110}
   OctominoRenderer4D: {fileID: 114988871034737994}
+--- !u!114 &114508790312544900
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1409708815965254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1005838349, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShaderNames:
+  - Octomino/StageDisplay
+--- !u!114 &114550323264318134
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1977390043546808}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1005838349, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShaderNames:
+  - Octomino/Button
 --- !u!114 &114573939573022720
 MonoBehaviour:
   m_ObjectHideFlags: 1

@@ -56,7 +56,11 @@ public class OctominoRenderer4D : MonoBehaviour, IOctominoRenderer {
 	}
 
 	public void Rotate(Vector2 dv2) {
+#if UNITY_EDITOR
 		RendererContainer.Rotate(Vector3.back, dv2.x, Space.World);
+#else
+		RendererContainer.Rotate(Vector3.down, dv2.x, Space.World);
+#endif
 		RendererContainer.Rotate(Vector3.right, dv2.y, Space.World);
 	}
 

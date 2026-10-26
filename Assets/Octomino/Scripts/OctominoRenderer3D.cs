@@ -40,7 +40,11 @@ public class OctominoRenderer3D : MonoBehaviour, IOctominoRenderer {
 	}
 
 	public void Rotate(Vector2 dv2) {
+#if UNITY_EDITOR
 		CubesContainer.Rotate(Vector3.back, dv2.x, Space.World);
+#else
+		CubesContainer.Rotate(Vector3.down, dv2.x, Space.World);
+#endif
 		CubesContainer.Rotate(Vector3.right, dv2.y, Space.World);
 	}
 }
