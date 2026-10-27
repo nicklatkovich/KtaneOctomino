@@ -279,6 +279,7 @@ public class OctominoModule : ModdedModule {
 				_status = STATUS.STARTED;
 				_path = faceSymbol;
 				CustomLogger("Puzzle started from button #{0}({1})", startButtonIndex + 1, _path);
+				CustomLogger("Buttons: {0}", Enumerable.Range(0, 8).Select(i => string.Format("#{0}({1})", i + 1, ColorToSymbol(_colors[_buttonToFaceIndex[i]]))).Join("; "));
 				Audio.PlaySoundAtTransform(START_SOUND, transform);
 				return true;
 			case STATUS.STARTED:
