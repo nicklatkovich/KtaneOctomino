@@ -19,7 +19,7 @@ MonoBehaviour:
 
 
     Module Id: `octomino`'
-  version: 0.9
+  version: 0.10
   outputFolder: build
   debugBuild: 0
   previewImage: {fileID: 2800000, guid: db070bbe93bd647f2ba2ffc2a399c494, type: 3}
