@@ -82,6 +82,8 @@ public class OctominoModule : ModdedModule {
 	private const string MOVE_SOUND = "OctominoMove";
 	private const string RESTART_SOUND = "OctominoRestart";
 	private const string CORRECT_SOUND = "Correct";
+	private const string RIGHT_BUTTON_HOLD_SOUND = "OctominoRightButtonHold";
+	private const string RIGHT_BUTTON_RELEASE_SOUND = "OctominoRightButtonRelease";
 
 	private readonly int[] STAGES_DIMS = new int[] { 2, 3, 4, 3, 2 };
 	// private readonly int[] STAGES_DIMS = new int[] { 3, 3, 3, 3, 3 };
@@ -132,11 +134,13 @@ public class OctominoModule : ModdedModule {
 			_isRotating = true;
 			_mouseRotationPosition = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
 			RotationButton.OnHeld();
+			Audio.PlaySoundAtTransform(RIGHT_BUTTON_HOLD_SOUND, transform);
 			return false;
 		};
 		RotationButton.Selectable.OnInteractEnded += () => {
 			_isRotating = false;
 			RotationButton.OnRelease();
+			Audio.PlaySoundAtTransform(RIGHT_BUTTON_RELEASE_SOUND, transform);
 		};
 	}
 
@@ -193,9 +197,11 @@ public class OctominoModule : ModdedModule {
 		StageDisplay.Selectable.OnInteract += () => {
 			_isResetting = true;
 			_resettingTime = Time.time;
+			Audio.PlaySoundAtTransform(RIGHT_BUTTON_HOLD_SOUND, transform);
 			return false;
 		};
 		StageDisplay.Selectable.OnInteractEnded += () => {
+			if (_isResetting) Audio.PlaySoundAtTransform(RIGHT_BUTTON_RELEASE_SOUND, transform);
 			_isResetting = false;
 			StageDisplay.ResetProgress = 0f;
 		};
