@@ -13,6 +13,8 @@ public class OctominoModule : ModdedModule {
 	public const float TIME_TO_SOLVE = 90; // seconds
 	public const float RESETTING_TIME = 2f;
 
+	private static readonly Color PURPLE = new Color32(0x7f, 0, 0xff, 0xff);
+
 	private enum STATUS {
 		CREATED = 0,
 		GENERATED = 1,
@@ -22,28 +24,37 @@ public class OctominoModule : ModdedModule {
 
 	private enum OFFSET_TYPE {
 		NO_OFFSET = 0,
-		STAGE_NUMBER = 1,
-		PORTS_COUNT = 2,
-		INDICATORS_COUNT = 3,
-		BATTERIES_COUNT = 4,
-		STRIKES_COUNT = 5,
+		STRIKES_COUNT = 1,
+		SOLVES_COUNT = 2,
+		PORTS_COUNT = 3,
+		INDICATORS_COUNT = 4,
+		BATTERIES_COUNT = 5,
+		STAGE_NUMBER = 6,
+		LAST_SN_DIGIT = 7,
+		MODULES_COUNT = 8,
 	}
 
 	private static readonly ReadOnlyCollection<OFFSET_TYPE> ALL_OFFSET_TYPES = System.Array.AsReadOnly(new OFFSET_TYPE[] {
-		OFFSET_TYPE.STAGE_NUMBER,
+		OFFSET_TYPE.STRIKES_COUNT,
+		OFFSET_TYPE.SOLVES_COUNT,
 		OFFSET_TYPE.PORTS_COUNT,
 		OFFSET_TYPE.INDICATORS_COUNT,
 		OFFSET_TYPE.BATTERIES_COUNT,
-		OFFSET_TYPE.STRIKES_COUNT,
+		OFFSET_TYPE.STAGE_NUMBER,
+		OFFSET_TYPE.LAST_SN_DIGIT,
+		OFFSET_TYPE.MODULES_COUNT,
 	});
 
 	private static readonly ReadOnlyCollection<Color> OFFSET_TYPES_COLORS = System.Array.AsReadOnly(new Color[] {
 		Color.black,
-		Color.yellow,
+		Color.red,
+		Color.green,
 		Color.blue,
 		Color.cyan,
 		Color.magenta,
-		Color.red,
+		Color.yellow,
+		Color.white,
+		PURPLE,
 	});
 
 	// self components
@@ -84,7 +95,7 @@ public class OctominoModule : ModdedModule {
 		Color.magenta,
 		Color.yellow,
 		Color.white,
-		new Color32(0x7f, 0, 0xff, 0xff), // purple
+		PURPLE, // purple
 	};
 
 	private Vector2 _mouseRotationPosition;
@@ -104,6 +115,7 @@ public class OctominoModule : ModdedModule {
 	private int[] _faceToButtonIndex;
 	private OFFSET_TYPE _offset0 = OFFSET_TYPE.NO_OFFSET;
 	private OFFSET_TYPE _offset1 = OFFSET_TYPE.NO_OFFSET;
+	private OFFSET_TYPE _offset2 = OFFSET_TYPE.NO_OFFSET;
 	private Queue<OFFSET_TYPE> _offsetTypesQueue;
 	private OctominoUtils.FaceProps[] _puzzle;
 	private ButtonComponent[] _buttons;
@@ -112,6 +124,8 @@ public class OctominoModule : ModdedModule {
 		CreateButtons();
 		StageDisplay.OuterColor_0 = OFFSET_TYPES_COLORS.PickRandom();
 		StageDisplay.OuterColor_1 = OFFSET_TYPES_COLORS.PickRandom();
+		StageDisplay.OuterColor_2 = OFFSET_TYPES_COLORS.PickRandom();
+		StageDisplay.OuterColorsCount = Random.Range(0, 2) == 0 ? 2 : 3;
 		ResetOffsetTypesQueue();
 		GeneratePuzzle(STAGES_DIMS[0]);
 		RotationButton.Selectable.OnInteract += () => {
@@ -161,8 +175,6 @@ public class OctominoModule : ModdedModule {
 					StageDisplay.Progress = 0;
 					GeneratePuzzle(STAGES_DIMS[0]);
 					Reset();
-					_offset0 = OFFSET_TYPE.NO_OFFSET;
-					_offset1 = OFFSET_TYPE.NO_OFFSET;
 					ResetOffsetTypesQueue();
 					Audio.PlaySoundAtTransform(RESTART_SOUND, transform);
 				}
@@ -177,8 +189,6 @@ public class OctominoModule : ModdedModule {
 		base.OnActivate();
 		StageDisplay.Progress = 0;
 		StageDisplay.ResetProgress = 0;
-		StageDisplay.OuterColor_0 = Color.black;
-		StageDisplay.OuterColor_1 = Color.black;
 		Reset();
 		StageDisplay.Selectable.OnInteract += () => {
 			_isResetting = true;
@@ -224,12 +234,15 @@ public class OctominoModule : ModdedModule {
 		}
 		_finishButtonIndex = Random.Range(0, OctominoUtils.SIZE);
 		CustomLogger("Finish button: #{0}({1})", _finishButtonIndex + 1, ColorToSymbol(_colors[_buttonToFaceIndex[_finishButtonIndex]]));
-		if (_passedStagesCount == 0) _offset0 = OFFSET_TYPE.NO_OFFSET;
+		if (_passedStagesCount == 0) _offset0 = OFFSET_TYPE.SOLVES_COUNT;
 		else if (_passedStagesCount == 1) _offset0 = OFFSET_TYPE.STAGE_NUMBER;
 		else _offset0 = GetOffsetType(null);
-		_offset1 = _passedStagesCount < 4 ? OFFSET_TYPE.NO_OFFSET : GetOffsetType(_offset0);
+		_offset1 = _passedStagesCount < 3 ? OFFSET_TYPE.NO_OFFSET : GetOffsetType(new [] { _offset0 });
+		_offset2 = _passedStagesCount < 4 ? OFFSET_TYPE.NO_OFFSET : GetOffsetType(new [] { _offset0, _offset1 });
 		StageDisplay.OuterColor_0 = OFFSET_TYPES_COLORS[(int)_offset0];
-		StageDisplay.OuterColor_1 = OFFSET_TYPES_COLORS[(int)(_offset1 == OFFSET_TYPE.NO_OFFSET ? _offset0 : _offset1)];
+		StageDisplay.OuterColor_1 = OFFSET_TYPES_COLORS[(int)_offset1];
+		StageDisplay.OuterColor_2 = OFFSET_TYPES_COLORS[(int)_offset2];
+		StageDisplay.OuterColorsCount = _offset2 != OFFSET_TYPE.NO_OFFSET ? 3 : _offset1 != OFFSET_TYPE.NO_OFFSET ? 2 : 1;
 		LogOffsets();
 		_buttons[_finishButtonIndex].Renderer.enabled = true;
 		_status = STATUS.GENERATED;
@@ -266,8 +279,10 @@ public class OctominoModule : ModdedModule {
 		string faceSymbol = ColorToSymbol(_colors[faceIndex]);
 		switch (_status) {
 			case STATUS.GENERATED:
-				if (_offset0 == OFFSET_TYPE.STRIKES_COUNT || _offset1 == OFFSET_TYPE.STRIKES_COUNT) CustomLogger("Current strikes count: {0}", BombInfo.GetStrikes());
-				int startButtonIndex = TrueModulo(_finishButtonIndex + _offsetDirection * (GetOffset(_offset0) + GetOffset(_offset1)), OctominoUtils.SIZE);
+				if (new [] { _offset0, _offset1, _offset2 }.Contains(OFFSET_TYPE.STRIKES_COUNT)) CustomLogger("Current strikes count: {0}", BombInfo.GetStrikes());
+				if (new [] { _offset0, _offset1, _offset2 }.Contains(OFFSET_TYPE.SOLVES_COUNT)) CustomLogger("Current solves count: {0}", GetOffset(OFFSET_TYPE.SOLVES_COUNT));
+				int offsetSum = GetOffset(_offset0) + GetOffset(_offset1) + GetOffset(_offset2);
+				int startButtonIndex = TrueModulo(_finishButtonIndex + _offsetDirection * offsetSum, OctominoUtils.SIZE);
 				if (startButtonIndex != index) {
 					CustomLogger("Expected starting button: {0}. Pressed button: {1}. Strike.", startButtonIndex + 1, index + 1);
 					return StrikeAndReset(disableFallback: true);
@@ -383,29 +398,34 @@ public class OctominoModule : ModdedModule {
 	}
 
 	private void ResetOffsetTypesQueue() {
-		List<OFFSET_TYPE> list = new List<OFFSET_TYPE>() { OFFSET_TYPE.PORTS_COUNT, OFFSET_TYPE.INDICATORS_COUNT, OFFSET_TYPE.BATTERIES_COUNT, OFFSET_TYPE.STRIKES_COUNT };
+		List<OFFSET_TYPE> list = new List<OFFSET_TYPE>(ALL_OFFSET_TYPES);
+		list.Remove(OFFSET_TYPE.SOLVES_COUNT);
+		list.Remove(OFFSET_TYPE.STAGE_NUMBER);
 		list.Shuffle();
 		_offsetTypesQueue = new Queue<OFFSET_TYPE>(list);
 	}
 
-	private OFFSET_TYPE GetOffsetType(OFFSET_TYPE? ignore) {
+	private OFFSET_TYPE GetOffsetType(IEnumerable<OFFSET_TYPE> ignore = null) {
 		// TODO: rewrite without using do-while-loop
 		OFFSET_TYPE result;
 		do {
 			if (_offsetTypesQueue.Count > 0) result = _offsetTypesQueue.Dequeue();
 			else result = ALL_OFFSET_TYPES.PickRandom();
-		} while (result == ignore);
+		} while (ignore != null && ignore.Contains(result));
 		return result;
 	}
 
 	private int GetOffset(OFFSET_TYPE type) {
 		switch (type) {
 			case OFFSET_TYPE.NO_OFFSET: return 0;
-			case OFFSET_TYPE.STAGE_NUMBER: return _passedStagesCount + 1;
-			case OFFSET_TYPE.PORTS_COUNT: return BombInfo.GetPortCount();
-			case OFFSET_TYPE.BATTERIES_COUNT: return BombInfo.GetBatteryCount();
-			case OFFSET_TYPE.INDICATORS_COUNT: return BombInfo.GetIndicators().Count();
 			case OFFSET_TYPE.STRIKES_COUNT: return BombInfo.GetStrikes();
+			case OFFSET_TYPE.SOLVES_COUNT: return BombInfo.GetSolvedModuleIDs().Count;
+			case OFFSET_TYPE.PORTS_COUNT: return BombInfo.GetPortCount();
+			case OFFSET_TYPE.INDICATORS_COUNT: return BombInfo.GetIndicators().Count();
+			case OFFSET_TYPE.BATTERIES_COUNT: return BombInfo.GetBatteryCount();
+			case OFFSET_TYPE.STAGE_NUMBER: return _passedStagesCount + 1;
+			case OFFSET_TYPE.LAST_SN_DIGIT: return BombInfo.GetSerialNumberNumbers().LastOrDefault();
+			case OFFSET_TYPE.MODULES_COUNT: return BombInfo.GetModuleIDs().Count();
 			default: throw new System.NotImplementedException();
 		}
 	}
@@ -423,7 +443,12 @@ public class OctominoModule : ModdedModule {
 	}
 
 	private void LogOffsets() {
-		if (_offset1 != OFFSET_TYPE.NO_OFFSET) {
+		if (_offset2 != OFFSET_TYPE.NO_OFFSET) {
+			int off1 = LogOffsetCalculation(_offset0, "Offset 1/3: ");
+			int off2 = LogOffsetCalculation(_offset1, "Offset 2/3: ");
+			int off3 = LogOffsetCalculation(_offset2, "Offset 3/3: ");
+			CustomLogger("Total offset: {0}+{1}+{2} = {3}", off1, off2, off3, off1 + off2 + off3);
+		} else if (_offset1 != OFFSET_TYPE.NO_OFFSET) {
 			int off1 = LogOffsetCalculation(_offset0, "Offset 1/2: ");
 			int off2 = LogOffsetCalculation(_offset1, "Offset 2/2: ");
 			CustomLogger("Total offset: {0}+{1} = {2}", off1, off2, off1 + off2);
@@ -440,11 +465,14 @@ public class OctominoModule : ModdedModule {
 	private string GetOffsetDescriptor(OFFSET_TYPE offset) {
 		switch (offset) {
 			case OFFSET_TYPE.NO_OFFSET: return "No offset";
-			case OFFSET_TYPE.STAGE_NUMBER: return "Stage number";
-			case OFFSET_TYPE.PORTS_COUNT: return "Ports count";
-			case OFFSET_TYPE.BATTERIES_COUNT: return "Batteries count";
-			case OFFSET_TYPE.INDICATORS_COUNT: return "Indicators count";
 			case OFFSET_TYPE.STRIKES_COUNT: return "Strikes count";
+			case OFFSET_TYPE.SOLVES_COUNT: return "Solves count";
+			case OFFSET_TYPE.PORTS_COUNT: return "Ports count";
+			case OFFSET_TYPE.INDICATORS_COUNT: return "Indicators count";
+			case OFFSET_TYPE.BATTERIES_COUNT: return "Batteries count";
+			case OFFSET_TYPE.STAGE_NUMBER: return "Stage number";
+			case OFFSET_TYPE.LAST_SN_DIGIT: return "Last SN digit";
+			case OFFSET_TYPE.MODULES_COUNT: return "Modules count";
 			default: throw new System.NotImplementedException();
 		}
 	}

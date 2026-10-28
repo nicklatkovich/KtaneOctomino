@@ -2,8 +2,10 @@
 	Properties {
 		_Progress ("Progress", float) = 0
 		_ResetProgress ("ResetProgress", float) = 0
-		_OuterColor_0 ("OuterColor #0", Color) = (0, 0, 0, 1)
-		_OuterColor_1 ("OuterColor #1", Color) = (0, 0, 0, 1)
+		_OuterColor_0 ("OuterColor #0", Color) = (1, 0, 0, 1)
+		_OuterColor_1 ("OuterColor #1", Color) = (0, 1, 0, 1)
+		_OuterColor_2 ("OuterColor #2", Color) = (0, 0, 1, 1)
+		_OuterColorsCount ("OuterColors Count", int) = 3
 	}
 	SubShader {
 		Tags { "RenderType" = "Opaque" }
@@ -30,6 +32,8 @@
 			float _ResetProgress;
 			float4 _OuterColor_0;
 			float4 _OuterColor_1;
+			float4 _OuterColor_2;
+			int _OuterColorsCount;
 
 			v2f vert (appdata v) {
 				v2f o;
@@ -44,9 +48,10 @@
 				if (radius > 1) discard;
 				if (radius > 0.85) return 0;
                 float angle = 1 * PI / 2 - atan2(pos.y, pos.x);
-				float progress = min(frac(angle / (2.0 * PI)), 0.99); // fix thin around 0
+				float progress = frac(angle / (2.0 * PI)); // fix thin around 0
 				if (radius > 0.7) {
-					float4 offsetColor = (progress + _Time.y / 8.0) % 1.0 <= 0.5 ? _OuterColor_0 : _OuterColor_1;
+					int outer_ind = floor(frac(progress + _Time.y / 8.0) * _OuterColorsCount);
+					float4 offsetColor = outer_ind == 0 ? _OuterColor_0 : outer_ind == 1 ? _OuterColor_1 : outer_ind == 2 ? _OuterColor_2 : float4(0, 0, 0, 1);
 					if (_ResetProgress >= progress) offsetColor.rgb = 1.0 - offsetColor.rgb;
 					return offsetColor;
 				}
