@@ -13,8 +13,16 @@ Assets/Editor/*
 !Assets/Editor/Resources.meta
 !Assets/Editor/Resources/
 
-/Manual
+/Manual/*
+!/Manual/HTML/
+/Manual/HTML/*
+!/Manual/HTML/img/
+/Manual/HTML/img/*
+!/Manual/HTML/img/Component/
+/Manual/HTML/img/Component/*
 /CommunityPlugins
+!/Manual/JSON/
+/Manual/JSON/*
 
 Assembly-CSharp*
 /*.sln
@@ -25,6 +33,6 @@ Models/*
 # Octomino
 !/Assets/Octomino.meta
 !/Assets/Octomino/
-!/Manual/img/Octomino/
-!/Manual/img/Component/Octomino.svg
-!/Manual/js/Octomino/
+!/Manual/HTML/Octomino.html
+!/Manual/HTML/img/Component/Octomino.svg
+!/Manual/JSON/Octomino.json
