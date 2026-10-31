@@ -14,12 +14,17 @@ MonoBehaviour:
   id: octomino
   title: Octomino
   author: NickLatkovich
-  description: 'My first mod after a four-year break. And I think it''s a great fit
-    for the Manual Challenge, so that''s what it is. GLHF!
+  description: 'Build a path through 2D, 3D and 4D octominoes!
 
 
-    Module Id: `octomino`'
-  version: 0.10
+    This module was released as a manual challenge.
+
+
+    Module Id: `octomino`
+
+
+    TP support: WIP'
+  version: 1.0
   outputFolder: build
   debugBuild: 0
-  previewImage: {fileID: 2800000, guid: 358aca8ec60fb46db84e21ee08f4df95, type: 3}
+  previewImage: {fileID: 2800000, guid: 45f205906fe184cf385fe528477b243a, type: 3}
