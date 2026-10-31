@@ -281,6 +281,7 @@ public class OctominoModule : ModdedModule {
 	}
 
 	private bool OnButtonPressed(int index) {
+		if (_buttonToFaceIndex == null) return false;
 		int faceIndex = _buttonToFaceIndex[index];
 		string faceSymbol = ColorToSymbol(_colors[faceIndex]);
 		switch (_status) {
