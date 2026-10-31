@@ -14,12 +14,12 @@ MonoBehaviour:
   id: octomino
   title: Octomino
   author: NickLatkovich
-  description: 'My first mod after a four year break. And it just so happens that
-    it''s a great fit for the Manual Challenge, so that''s what it is. GLHF!
+  description: 'My first mod after a four-year break. And I think it''s a great fit
+    for the Manual Challenge, so that''s what it is. GLHF!
 
 
     Module Id: `octomino`'
   version: 0.10
   outputFolder: build
   debugBuild: 0
-  previewImage: {fileID: 2800000, guid: db070bbe93bd647f2ba2ffc2a399c494, type: 3}
+  previewImage: {fileID: 0}
