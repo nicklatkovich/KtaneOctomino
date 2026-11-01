@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.RegularExpressions;
 using KModkit;
 using UnityEngine;
 using wawa.Modules;
@@ -9,6 +10,7 @@ public class OctominoModule : ModdedModule {
 
 	public const int STAGES_COUNT = 5;
 	public const float TIME_TO_SOLVE = 90; // seconds
+	public const float TIME_TO_SOLVE_TP = 180;
 	public const float RESETTING_TIME = 2f;
 
 	private static readonly Color PURPLE = new Color32(0x7f, 0, 0xff, 0xff);
@@ -55,6 +57,14 @@ public class OctominoModule : ModdedModule {
 		PURPLE,
 	});
 
+	public readonly string TwitchHelpMessage = new[] {
+		"\"!{0} 3\" or \"!{0} 123456788\" - press buttons by position (left to right)",
+		"\"!{0} rgbcmywpp\" - press buttons by color",
+		"\"!{0} reset\" - hold the Reset button for 2 seconds",
+		"\"!{0} rotate 123 -45\" - rotate the octomino by the specified angles (in degrees) around the Z and X axes, respectively. The X angle is optional",
+		"The time limit is increased to 180 seconds",
+	}.Join(" | ");
+
 	// self components
 	public KMSelectable Selectable;
 	public KMAudio Audio;
@@ -71,6 +81,8 @@ public class OctominoModule : ModdedModule {
 	public OctominoRenderer2D OctominoRenderer2D;
 	public OctominoRenderer3D OctominoRenderer3D;
 	public OctominoRenderer4D OctominoRenderer4D;
+
+	public bool TwitchPlaysActive;
 
 	private const float BUTTONS_OFFSET = .006f;
 	private const float SECONDS_BEFORE_ACTIVATION = 6f; // module's timer animation duration before bomb activation
@@ -149,7 +161,7 @@ public class OctominoModule : ModdedModule {
 			StageDisplay.ResetProgress = Timer.Value;
 		} else if (_status == STATUS.STARTED || (_status == STATUS.GENERATED && _passedStagesCount >= 3)) {
 			_solvingTimer += Time.deltaTime;
-			float timer = _solvingTimer / TIME_TO_SOLVE;
+			float timer = _solvingTimer / (TwitchPlaysActive ? TIME_TO_SOLVE_TP : TIME_TO_SOLVE);
 			if (timer > 1) {
 				Log("Time's up. Strike.");
 				StrikeAndReset();
@@ -164,7 +176,7 @@ public class OctominoModule : ModdedModule {
 			OctominoRenderer4D.Rotate(dv2);
 		}
 		if (_isResetting) {
-			if (_status == STATUS.GENERATED && _passedStagesCount < 3) {
+			if (CanReset()) {
 				float progress = (Time.time - _resettingTime) / RESETTING_TIME;
 				if (progress < 1f) StageDisplay.ResetProgress = progress;
 				else {
@@ -205,6 +217,68 @@ public class OctominoModule : ModdedModule {
 		};
 	}
 
+	public System.Collections.IEnumerator ProcessTwitchCommand(string command) {
+		command = command.Trim().ToLower();
+		if (Regex.IsMatch(command, @"^[1-8]+$")) {
+			yield return null;
+			int ind = int.Parse(command);
+			yield return command.Select(c => _buttons[c - '1'].Selectable).ToArray();
+			yield break;
+		}
+		if (Regex.IsMatch(command, @"^[rgbcmywp]+$")) {
+			yield return null;
+			if (_status != STATUS.STARTED) {
+				yield return "sendtochat {0}, !{1} can't use colors if the stage has not begun";
+				yield break;
+			}
+			string colorSymbols = Enumerable.Range(0, OctominoUtils.SIZE).Select(i => System.Char.ToLower(ColorToSymbol(_colors[i]))).Join("");
+			yield return command.Select(c => _buttons[_faceToButtonIndex[colorSymbols.IndexOf(c)]].Selectable).ToArray();
+			yield break;
+		}
+		if (command == "reset") {
+			yield return null;
+			if (!CanReset()) {
+				yield return "sendtochat {0}, !{1} module can't be reset now";
+				yield break;
+			}
+			yield return StageDisplay.Selectable;
+			yield return new WaitForSeconds(RESETTING_TIME);
+			yield return StageDisplay.Selectable;
+			yield break;
+		}
+		if (Regex.IsMatch(command, @"^rotate +-?\d{1,3}( +-?\d{1,3})?$")) {
+			yield return null;
+			string[] split = command.Split(' ').Where(s => s.Length > 0).ToArray();
+			int x = int.Parse(split[1]);
+			int y = split.Length > 2 ? int.Parse(split[2]) : 0;
+			RotationButton.OnHeld();
+			float rotationStartTime = Time.time;
+			int dx = 0;
+			int dy = 0;
+			while (true) {
+				yield return null;
+				float dt = Time.time - rotationStartTime;
+				int newX;
+				int newY;
+				if (dt < 1) {
+					newX = Mathf.FloorToInt((float)x * dt);
+					newY = Mathf.FloorToInt((float)y * dt);
+				} else {
+					newX = x;
+					newY = y;
+				}
+				Vector2 dv2 = new Vector2(newX - dx, newY - dy);
+				OctominoRenderer2D.Rotate(dv2);
+				OctominoRenderer3D.Rotate(dv2);
+				OctominoRenderer4D.Rotate(dv2);
+				dx = newX;
+				dy = newY;
+				if (dt >= 1) break;
+			}
+			RotationButton.OnRelease();
+		}
+	}
+
 	private void OnStagePassed() {
 		_passedStagesCount += 1;
 		Log("Stage #{0} completed", _passedStagesCount);
@@ -241,8 +315,8 @@ public class OctominoModule : ModdedModule {
 		if (_passedStagesCount == 0) _offset0 = OFFSET_TYPE.SOLVES_COUNT;
 		else if (_passedStagesCount == 1) _offset0 = OFFSET_TYPE.STAGE_NUMBER;
 		else _offset0 = GetOffsetType(null);
-		_offset1 = _passedStagesCount < 3 ? OFFSET_TYPE.NO_OFFSET : GetOffsetType(new [] { _offset0 });
-		_offset2 = _passedStagesCount < 4 ? OFFSET_TYPE.NO_OFFSET : GetOffsetType(new [] { _offset0, _offset1 });
+		_offset1 = _passedStagesCount < 3 ? OFFSET_TYPE.NO_OFFSET : GetOffsetType(new[] { _offset0 });
+		_offset2 = _passedStagesCount < 4 ? OFFSET_TYPE.NO_OFFSET : GetOffsetType(new[] { _offset0, _offset1 });
 		StageDisplay.OuterColor_0 = OFFSET_TYPES_COLORS[(int)_offset0];
 		StageDisplay.OuterColor_1 = OFFSET_TYPES_COLORS[(int)_offset1];
 		StageDisplay.OuterColor_2 = OFFSET_TYPES_COLORS[(int)_offset2];
@@ -250,7 +324,7 @@ public class OctominoModule : ModdedModule {
 		LogOffsets();
 		_buttons[_finishButtonIndex].Renderer.enabled = true;
 		_status = STATUS.GENERATED;
-		Timer.Value = _solvingTimer / TIME_TO_SOLVE;
+		Timer.Value = _solvingTimer / (TwitchPlaysActive ? TIME_TO_SOLVE_TP : TIME_TO_SOLVE);
 		_path = "";
 	}
 
@@ -281,11 +355,11 @@ public class OctominoModule : ModdedModule {
 	private bool OnButtonPressed(int index) {
 		if (_buttonToFaceIndex == null) return false;
 		int faceIndex = _buttonToFaceIndex[index];
-		string faceSymbol = ColorToSymbol(_colors[faceIndex]);
+		char faceSymbol = ColorToSymbol(_colors[faceIndex]);
 		switch (_status) {
 			case STATUS.GENERATED:
-				if (new [] { _offset0, _offset1, _offset2 }.Contains(OFFSET_TYPE.STRIKES_COUNT)) Log("Current strikes count: {0}", BombInfo.GetStrikes());
-				if (new [] { _offset0, _offset1, _offset2 }.Contains(OFFSET_TYPE.SOLVES_COUNT)) Log("Current solves count: {0}", GetOffset(OFFSET_TYPE.SOLVES_COUNT));
+				if (new[] { _offset0, _offset1, _offset2 }.Contains(OFFSET_TYPE.STRIKES_COUNT)) Log("Current strikes count: {0}", BombInfo.GetStrikes());
+				if (new[] { _offset0, _offset1, _offset2 }.Contains(OFFSET_TYPE.SOLVES_COUNT)) Log("Current solves count: {0}", GetOffset(OFFSET_TYPE.SOLVES_COUNT));
 				int offsetSum = GetOffset(_offset0) + GetOffset(_offset1) + GetOffset(_offset2);
 				int startButtonIndex = TrueModulo(_finishButtonIndex + _offsetDirection * offsetSum, OctominoUtils.SIZE);
 				if (startButtonIndex != index) {
@@ -297,7 +371,7 @@ public class OctominoModule : ModdedModule {
 				_currentButtonIndex = index;
 				_isVisited[faceIndex] = true;
 				_status = STATUS.STARTED;
-				_path = faceSymbol;
+				_path = "" + faceSymbol;
 				Log("Puzzle started from button #{0}({1})", startButtonIndex + 1, _path);
 				Log("Buttons: {0}", Enumerable.Range(0, 8).Select(i => string.Format("#{0}({1})", i + 1, ColorToSymbol(_colors[_buttonToFaceIndex[i]]))).Join("; "));
 				Audio.PlaySoundAtTransform(START_SOUND, transform);
@@ -335,7 +409,7 @@ public class OctominoModule : ModdedModule {
 				}
 				if (minUnvisitedButtonIndex != int.MaxValue && minUnvisitedButtonIndex != index) {
 					LogPathAndTimer();
-					string expectedFaceSymbol = ColorToSymbol(_colors[_buttonToFaceIndex[minUnvisitedButtonIndex]]);
+					char expectedFaceSymbol = ColorToSymbol(_colors[_buttonToFaceIndex[minUnvisitedButtonIndex]]);
 					Log("Moved to #{0}({1}) while moving to #{2}({3}) is expected. Strike.", index + 1, faceSymbol, minUnvisitedButtonIndex + 1, expectedFaceSymbol);
 					return StrikeAndReset();
 				}
@@ -382,6 +456,10 @@ public class OctominoModule : ModdedModule {
 		IOctominoRenderer renderer = GetOctominoRenderer(dims);
 		renderer.enabled = true;
 		renderer.Initialize(_puzzle, _colors);
+	}
+
+	private bool CanReset() {
+		return _status == STATUS.GENERATED && _passedStagesCount < 3;
 	}
 
 	private IOctominoRenderer GetOctominoRenderer(int dims) {
@@ -478,18 +556,18 @@ public class OctominoModule : ModdedModule {
 		return ((a % b) + b) % b;
 	}
 
-	private static string ColorToSymbol(Color clr) {
+	private static char ColorToSymbol(Color clr) {
 		string result = string.Format("#{0}", ColorUtility.ToHtmlStringRGB(clr));
 		switch (result) {
-			case "#FF0000": return "R";
-			case "#00FF00": return "G";
-			case "#0000FF": return "B";
-			case "#00FFFF": return "C";
-			case "#FF00FF": return "M";
-			case "#FFEB04": return "Y";
-			case "#FFFFFF": return "W";
-			case "#7F00FF": return "P";
-			default: return result;
+			case "#FF0000": return 'R';
+			case "#00FF00": return 'G';
+			case "#0000FF": return 'B';
+			case "#00FFFF": return 'C';
+			case "#FF00FF": return 'M';
+			case "#FFEB04": return 'Y';
+			case "#FFFFFF": return 'W';
+			case "#7F00FF": return 'P';
+			default: throw new System.NotImplementedException(string.Format("Unknown color {0}", result));
 		}
 	}
 }
